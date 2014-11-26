@@ -1,0 +1,19 @@
+cec ../vpr/temp/bigkey.pre-vpr.blif ../vtr_flow/benchmarks/blif/bigkey.blif
+cec ../vpr/temp/elliptic.pre-vpr.blif ../vtr_flow/benchmarks/blif/elliptic.blif
+cec ../vpr/temp/s38417.pre-vpr.blif ../vtr_flow/benchmarks/blif/s38417.blif
+cec ../vpr/temp/ex1010.pre-vpr.blif ../vtr_flow/benchmarks/blif/ex1010.blif
+cec ../vpr/temp/misex3.pre-vpr.blif ../vtr_flow/benchmarks/blif/misex3.blif
+cec ../vpr/temp/alu4.pre-vpr.blif ../vtr_flow/benchmarks/blif/alu4.blif
+cec ../vpr/temp/clma.pre-vpr.blif ../vtr_flow/benchmarks/blif/clma.blif
+cec ../vpr/temp/ex5p.pre-vpr.blif ../vtr_flow/benchmarks/blif/ex5p.blif
+cec ../vpr/temp/seq_mcnc.pre-vpr.blif ../vtr_flow/benchmarks/blif/seq.blif
+cec ../vpr/temp/apex2.pre-vpr.blif ../vtr_flow/benchmarks/blif/apex2.blif
+cec ../vpr/temp/des.pre-vpr.blif ../vtr_flow/benchmarks/blif/des.blif
+cec ../vpr/temp/pdc.pre-vpr.blif ../vtr_flow/benchmarks/blif/pdc.blif
+cec ../vpr/temp/spla.pre-vpr.blif ../vtr_flow/benchmarks/blif/spla.blif
+cec ../vpr/temp/apex4.pre-vpr.blif ../vtr_flow/benchmarks/blif/apex4.blif
+cec ../vpr/temp/diffeq.pre-vpr.blif ../vtr_flow/benchmarks/blif/diffeq.blif
+cec ../vpr/temp/frisc.pre-vpr.blif ../vtr_flow/benchmarks/blif/frisc.blif
+cec ../vpr/temp/s298.pre-vpr.blif ../vtr_flow/benchmarks/blif/s298.blif
+cec ../vpr/temp/tseng.pre-vpr.blif ../vtr_flow/benchmarks/blif/tseng.blif
+
