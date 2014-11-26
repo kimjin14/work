@@ -1,0 +1,12 @@
+clock name: clk1
+clock period: 0.5
+reset name: reset
+reset cycle: 1
+reset (active h/l): 1
+constants: 
+constants values: 
+percentage toggle: 100
+simulation length (in cycles): 1000
+maximum area: 0
+other constraints: 
+other compile options: ungroup -all

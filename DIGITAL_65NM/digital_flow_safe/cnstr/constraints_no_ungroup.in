@@ -1,0 +1,12 @@
+clock name:
+clock period:
+reset name:
+reset cycle:
+reset (active h/l):
+constants: 
+constants values: 
+percentage toggle: 100
+simulation length (in cycles): 1000
+maximum area: 0
+other constraints:
+other compile options: set compile_ultra_ungroup_dw false

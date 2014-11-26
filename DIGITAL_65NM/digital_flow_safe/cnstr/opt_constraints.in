@@ -1,0 +1,10 @@
+clock name: clk
+clock period: 0.49
+reset name: reset
+reset cycle: 1
+reset (active h/l): 1
+constants: 
+constants values: 
+percentage toggle: 100
+simulation length (in cycles): 1000
+constraints: set_max_area 221.760001

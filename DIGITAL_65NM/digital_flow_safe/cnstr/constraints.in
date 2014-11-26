@@ -1,0 +1,12 @@
+clock name:
+clock period:
+reset name:
+reset cycle:
+reset (active h/l):
+constants: 
+constants values: 
+percentage toggle:
+simulation length (in cycles):
+maximum area: 0
+other constraints: 
+other compile options:

@@ -1,0 +1,123 @@
+*************************************************************************************
+** Updates
+*************************************************************************************
+June 26:
+- Multiple verilog input with option -v
+- How to run area timing analysis added to readme
+- More details on how to set your constraint file and feedback on your settings
+- ModelSim will exit on error
+
+
+*************************************************************************************
+** This program takes verilog and gives post-synthesis area/timing/power information.
+*************************************************************************************
+
+1. CAD tools (from Jaro)
+	Access to CAD tools requires that you register with CMC Microsystems;
+	details are in
+		<http://www.vrg.utoronto.ca/~jaro/VRG/licenses/CMC_subscription.txt>
+	Follow the instructions under "grad students and researchers".
+
+	Confidentiality agreements for technologies are accessible from campus
+	computers at
+		<http://www.vrg.utoronto.ca/UofT_Access_Only/>
+
+	From off campus, you can use your UTORid or library card
+	to login and view the same file, using
+		<http://myaccess.library.utoronto.ca/login?url=http://www.vrg.utoronto.ca/UofT_Access_Only>
+
+2. Set up
+	Copy the digital_flow directory.
+	digital_flow
+		README: contains instruction on how to run the digital flow
+		digital_flow.pl: main script to run everything
+		area_timing_analysis.pl: script that runs 3 times to optimize area, timing then both		
+		script: contains skeleton scripts for synthesis, place & route, tb generation, sim, and primetime
+			syn.tcl
+			encounter.tcl
+			tb_gen.pl
+			sim.do
+			primetime.tcl
+			primetime_timing.tcl
+			constraints.sdc
+		setup: contains skeleton setup for synthesis and place & route
+			.synopsys_dc.setup
+			encounter.conf
+
+3. How to run
+	All the directories will be made within digital_flow directory.
+	A new directory named <design> will be created.
+	The verilog file name MUST be same as the top level design.
+	Resulting summary can be found in the design directory (<design>.log).
+	To run:
+		perl digital_flow.pl -v <your verilog file>
+			-c <your constraint file>: without constraint file, no constraints are assumed
+				example constraint file:
+					clock name:
+						name of clock signal (only one clock supported)
+						none specified means no constraints will be set on the clock
+						used for synthesis, timing analysis, and simulation
+					clock period:
+						desired clock period
+					reset name:
+						name of reset signal
+						used for simulation
+					reset cycle:
+						number of cycles for reset signal
+					reset (active h/l):
+						reset signal value (1 or 0)
+					constants: 
+						list of signals not to be toggled
+						used for simulation
+					constants values: 
+						list of values in the order of constant signal
+					percentage toggle: 100
+						percentage of toggle rate (100 toggle at every cycle, 0 do not toggle)
+						used for simulation
+					simulation length (in cycles): 1000
+						length of simulation in cycles
+						used for simulation
+					maximum area: 0
+						maximum area, 0 is recommended for area aware synthesis
+						used for synthesis
+					other constraints: 
+						any other constraints in sdc format
+						ex. input_delay -from {} -to {} 1.0
+						used for synthesis
+					other compile options:
+						any compile options in sdc format
+						ex. set_scan_state test_ready (for scan reg) or set_flatten (for flattening)
+						used for synthesis
+			-nosyn: no synthesis
+			-nopr: no place and route
+			-notiming: no timing anylsis
+			-nosim: no simulation
+			-nopower: no power analysis
+	To run area timing analysis:
+		perl digital_flow.pl -v <your verilog file> -c <your constraint file>
+
+4. More information on what the script does
+	Synthesis - using Synopsys Design Compiler
+		Elaboration is completed first.
+		Constraints (given by user) is applied then the design is compiled.
+		Design is compiled again with scan chain option enabled.
+		Design is compiled again with compile_sequential_area_recovery = true.
+		Area, timing, and constraint reports are dumped to <design>/syn/output.txt
+	Place and Route - using Cadence Encounter
+		Floorplanning with 85% core utilization.
+		Power ring added.
+		Standard cell placed with "pre-placement optimization option"
+		VDD VSS tie high and tie low all connected and rounted using Sroute
+		Nanoroute with timing driven = true
+		Golden netlist, rc (in spef), sdf, and area information dumped. (gds dumped also)
+	Post-synthesis simulation - using ModelSim
+		Testbench generated (if this step doesn't work, create your own test bench)
+		Design and testbench compiled.
+		Simulation with sdf annotated.
+		Dumps vcd file.
+	Timing and Power analysis - using primetime
+		Same constraint file as synthesis used.
+		Spef annotated for timing information.
+		Spef and vcd used for power information.
+		Full reports dumped to <design>/pt/output.txt
+
