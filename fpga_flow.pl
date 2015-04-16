@@ -56,8 +56,8 @@ $design_verilog_file = File::Spec->rel2abs( $design_verilog_file );
 $arch_file = File::Spec->rel2abs( $arch_file );
 $cnstr_file = File::Spec->rel2abs( $cnstr_file );
 $fpga_syn_file = File::Spec->rel2abs( $fpga_syn_file );
-$fpga_verilog_file = "fpga_top.v,fpga_modules.v,fpga_mux.v,primitives.v,define.vh";
-$fpga_other_file = "fpga_top_tb.v,bitgen_report.txt,vsim.do,wave.do,vpr_out.txt,vsim_out.txt,fpga_top.sdc";
+$fpga_verilog_file = "fpga_top.v,fpga_config.v,fpga_modules.v,fpga_mux.v,primitives.v,define.vh";
+$fpga_other_file = "floorplan.txt,fpga_top_tb.v,bitgen_report.txt,vsim.do,wave.do,vpr_out.txt,vsim_out.txt,fpga_top.sdc";
 
 $vtr_path = File::Spec->rel2abs( "VTR/vpr" );
 $digital_flow_path = File::Spec->rel2abs( "DIGITAL_65NM/digital_flow" );

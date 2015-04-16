@@ -10,6 +10,8 @@
 #include "dump_bitstream.h"
 #include "vpr_utils.h"
 
+int buffer_freq = 2;
+
 void dump_arch_as_verilog () {
 	int *pb_graph_config_bits = (int*)malloc(num_types*sizeof(int));
 	int max_mux_size = 0;
@@ -31,6 +33,32 @@ void dump_mux_as_verilog (INP const char *file_name, int* mux_max_size) {
 		fprintf(fp, "\tinput [%d:0]in,\n", i-1);
 		fprintf(fp, "\tinput [%d:0]config_in,\n", (int)ceil(log(i)/log(2))-1);
 		fprintf(fp, "\tinput config_reset,\n");				
+		//fprintf(fp, "\toutput out\n");				
+		fprintf(fp, "\toutput reg out\n");				
+		fprintf(fp, ");\n\n");
+		//fprintf(fp, "reg mux_out;\n");
+		fprintf(fp, "always @ (*) begin\n");
+		fprintf(fp, "\tif (config_reset) begin\n");
+		//fprintf(fp, "\t\tmux_out = 1'b1;\n");
+		fprintf(fp, "\t\tout = 1'b1;\n");
+		fprintf(fp, "\tend else begin\n");
+		fprintf(fp, "\t\tcase(config_in)\n");	
+		for (int j=0; j<i; j++) {
+			//fprintf(fp, "\t\t\t%d'd%d: mux_out = in[%d];\n", (int)ceil(log(i)/log(2)), j, j);
+			fprintf(fp, "\t\t\t%d'd%d: out = in[%d];\n", (int)ceil(log(i)/log(2)), j, j);
+		}	
+		//fprintf(fp, "\t\t\tdefault: mux_out = 1'b1;\n");
+		fprintf(fp, "\t\t\tdefault: out = 1'b1;\n");
+		fprintf(fp, "\t\tendcase\n");	
+		fprintf(fp, "\tend\n");
+		fprintf(fp, "end\n\n");
+		//fprintf(fp, "buffer_wire buff_out (.in(mux_out), .out(out));\n");				
+		fprintf(fp, "endmodule\n\n");
+		
+		fprintf(fp, "module mux%d_long (\n", i);
+		fprintf(fp, "\tinput [%d:0]in,\n", i-1);
+		fprintf(fp, "\tinput [%d:0]config_in,\n", (int)ceil(log(i)/log(2))-1);
+		fprintf(fp, "\tinput config_reset,\n");				
 		fprintf(fp, "\toutput reg out\n");				
 		fprintf(fp, ");\n\n");
 		fprintf(fp, "always @ (*) begin\n");
@@ -45,7 +73,7 @@ void dump_mux_as_verilog (INP const char *file_name, int* mux_max_size) {
 		fprintf(fp, "\t\tendcase\n");	
 		fprintf(fp, "\tend\n");
 		fprintf(fp, "end\n\n");				
-		fprintf(fp, "endmodule\n\n");
+		fprintf(fp, "endmodule\n\n");		
 	}
 	fclose(fp);
 }
@@ -569,10 +597,14 @@ void dump_rr_graph_as_verilog (INP const char *file_name, int* type_config_bits,
 	
 	static const char *name_type[] = { "SOURCE", "SINK", "IPIN", "OPIN",
 			"CHANX", "CHANY", "INTRA_CLUSTER_EDGE" };
-
+	static const char *direction_name[] = { "OPEN", "INC_DIRECTION",
+			"DEC_DIRECTION", "BI_DIRECTION" };
+			
 	FILE *fp;
 	FILE *fp_config;
 	FILE *fp_sdc;
+	FILE *fp_floorplan;
+	
 	int inode, iconn, icap;
 	
 	int config_size, pre_config_array_size;
@@ -589,6 +621,7 @@ void dump_rr_graph_as_verilog (INP const char *file_name, int* type_config_bits,
 	fp = my_fopen(file_name, "w", 0);
 	fp_config = my_fopen("bitgen_report.txt", "w", 0);
 	fp_sdc = my_fopen("fpga_top.sdc", "w", 0);
+	fp_floorplan = my_fopen("floorplan.txt", "w", 0);
 	
 	int i, j, k, l, m;
 	
@@ -620,10 +653,15 @@ void dump_rr_graph_as_verilog (INP const char *file_name, int* type_config_bits,
 	
 	int** node_fan_in = (int**)malloc((num_rr_nodes)*sizeof(int*));
 	int* node_fan_in_index = (int*)malloc((num_rr_nodes)*sizeof(int));
-	
+	double* node_x = (double*)malloc(num_rr_nodes*sizeof(double));
+	double* node_y = (double*)malloc(num_rr_nodes*sizeof(double));
+	int* cb_sb = (int*)malloc(num_rr_nodes*sizeof(int));
+	int* long_short = (int*)malloc(num_rr_nodes*sizeof(int));
+	int* node_len = (int*)malloc(num_rr_nodes*sizeof(int));	
+
 	int* node_trace = (int*)malloc(num_rr_nodes*sizeof(int));
 	int* node_net_num = (int*)malloc(num_rr_nodes*sizeof(int));
-	
+		
 	for (i=0; i<nx+2; i++) {
 		clock_pin_sort_by_grid[i] = (int****)malloc((ny+2)*sizeof(int***));
 		input_pin_sort_by_grid[i] = (int****)malloc((ny+2)*sizeof(int***));
@@ -655,19 +693,93 @@ void dump_rr_graph_as_verilog (INP const char *file_name, int* type_config_bits,
 	for (inode = 0; inode < num_rr_nodes; inode++) {
 		node_fan_in[inode] = (int*)malloc((rr_node[inode].fan_in)*sizeof(int));
 		node_fan_in_index[inode] = rr_node[inode].fan_in;
+		node_x[inode] = -1;
+		node_y[inode] = -1;
+		cb_sb[inode] = -1;
+		long_short[inode] = -1;
+		node_len[inode] = -1;
 		node_trace[inode] = -1;
 		node_net_num[inode] = -1;
 	}
 	
 	////////////////////// START FILLING IN DATA STRUCTURES //////////////////////
 	t_pb_graph_pin *current_pin;
-	
+	int max_len = 14;
 	for (inode = 0; inode < num_rr_nodes; inode++) {
 		i = rr_node[inode].xlow;
 		j = rr_node[inode].ylow;
 		k = rr_node[inode].z;
 		rr_type = rr_node[inode].type;
 		
+		//IPIN or OPIN - Connection Blocks
+		if (name_type[rr_type] == name_type[2]||name_type[rr_type] == name_type[3]) {			
+			node_x[inode] = rr_node[inode].xlow;
+			node_y[inode] = rr_node[inode].ylow;
+			cb_sb[inode] = 0;
+			//printf("pin x, y = %d %d\n", rr_node[inode].xlow, rr_node[inode].ylow);
+		}
+		
+		//x dir
+		if (name_type[rr_type] == name_type[4]) {
+		//increment, low is driven by mux
+			if (direction_name[rr_node[inode].direction + 1]==direction_name[1]) {				
+				node_x[inode] = rr_node[inode].xlow-1;
+				node_y[inode] = rr_node[inode].ylow;
+				node_len[inode] = rr_node[inode].xhigh - rr_node[inode].xlow + 1;
+				cb_sb[inode] = 1;
+				//printf("chan x, y = %d %d\n", rr_node[inode].xlow, rr_node[inode].ylow);
+			} else if (direction_name[rr_node[inode].direction + 1]==direction_name[2]) {
+				node_x[inode] = rr_node[inode].xhigh;
+				node_y[inode] = rr_node[inode].yhigh;
+				node_len[inode] = rr_node[inode].xlow - rr_node[inode].xhigh + 1;
+				cb_sb[inode] = 1;
+				//printf("chan x, y = %d %d\n", rr_node[inode].xhigh, rr_node[inode].yhigh);
+			}
+				node_len[inode] = rr_node[inode].xhigh - rr_node[inode].xlow + 1;
+			//check if its long or short
+			if (rr_node[inode].xhigh - rr_node[inode].xlow >= max_len) {
+				//max_len = rr_node[inode].xhigh - rr_node[inode].xlow;
+				long_short[inode] = 0;
+				if (rr_node[inode].num_edges<10) {
+					//printf("long but small = %d %d\n", inode, rr_node[inode].num_edges);
+				}
+			} else {
+				long_short[inode] = 1;
+				if (rr_node[inode].num_edges>15) {
+					//printf("short but big = %d %d\n", inode, rr_node[inode].num_edges);
+				}
+			}
+		} else if (name_type[rr_type] == name_type[5]) {
+		//increment, low is driven by mux
+			if (direction_name[rr_node[inode].direction + 1]==direction_name[1]) {				
+				node_x[inode] = rr_node[inode].xlow;
+				node_y[inode] = rr_node[inode].ylow-1;
+				node_len[inode] = rr_node[inode].yhigh - rr_node[inode].ylow;
+				cb_sb[inode] = 1;
+				//printf("chan x, y = %d %d\n", rr_node[inode].xlow, rr_node[inode].ylow);
+			} else if (direction_name[rr_node[inode].direction + 1]==direction_name[2]) {
+				node_x[inode] = rr_node[inode].xhigh;
+				node_y[inode] = rr_node[inode].yhigh;
+				node_len[inode] = rr_node[inode].ylow - rr_node[inode].yhigh;
+				cb_sb[inode] = 1;
+				//printf("chan x, y = %d %d\n", rr_node[inode].xhigh, rr_node[inode].yhigh);
+			}
+				node_len[inode] = rr_node[inode].yhigh - rr_node[inode].ylow + 1;
+			//check if its long or short
+			if (rr_node[inode].yhigh - rr_node[inode].ylow >= max_len) {
+				//max_len = rr_node[inode].yhigh - rr_node[inode].ylow;
+				long_short[inode] = 0;
+				if (rr_node[inode].num_edges<10) {
+				//	printf("long but small = %d %d\n", inode, rr_node[inode].num_edges);
+				}
+			} else {
+				long_short[inode] = 1;
+				if (rr_node[inode].num_edges>15) {
+				//	printf("short but big = %d %d\n", inode, rr_node[inode].num_edges);
+				}
+			}				
+		}
+
 		//given the pb_graph_node and the ptc_num, pin info is provided
 		current_pin = get_pb_graph_node_pin_from_pb_graph_node\
 			(grid[i][j].type->pb_graph_head, rr_node[inode].ptc_num);
@@ -709,6 +821,28 @@ void dump_rr_graph_as_verilog (INP const char *file_name, int* type_config_bits,
 		}
 	}
 	
+	////////////////////// PRINT GROUPS //////////////////////
+	for (i=0; i<nx+2; i++) {
+		for (j=0; j<ny+2; j++) {
+			fprintf(fp_floorplan, "createInstGroup area_%d_%d\n", i, j);
+		}
+	}
+	for (i=0; i<nx+1; i++) {
+		for (j=0; j<ny+1; j++) {
+			fprintf(fp_floorplan, "createInstGroup sb_%d_%d\n", i, j);
+		}
+	}
+	for (i=0; i<nx+2; i++) {
+		for (j=0; j<ny+2; j++) {
+			fprintf(fp_floorplan, "setObjFPlanBox Group area_%d_%d [expr $w*%d] [expr $w*%d] [expr $w*(%d+1)] [expr $w*(%d+1)]\n", i, j, i, j, i, j);
+		}
+	}
+	for (i=0; i<nx+1; i++) {
+		for (j=0; j<ny+1; j++) {
+			fprintf(fp_floorplan, "setObjFPlanBox Group sb_%d_%d [expr $w*(%d+0.5)] [expr $w*(%d+0.5)] [expr $w*(%d+1.5)] [expr $w*(%d+1.5)]\n", i, j, i, j, i, j);
+		}
+	}
+	
 	/////////////////////////////////////////////////////////////////////
 	// create top module and top level inputs and outputs
 	//	io has special handling: inout ports to be configred
@@ -728,23 +862,46 @@ void dump_rr_graph_as_verilog (INP const char *file_name, int* type_config_bits,
 	fprintf(fp, "\tinput config_reset,\n");
 	fprintf(fp, "\tinput config_clk,\n");
 	fprintf(fp, "\tinput config_in,\n");
-	fprintf(fp, "\tinput config_mode,\n");
-	fprintf(fp, "\toutput config_out\n");
+	fprintf(fp, "\tinput config_mode\n");
+	//fprintf(fp, "\toutput config_out\n");
 	fprintf(fp, ");\n\n");
-	
+	printf("creating nodes\n");	
 	/////////////////////////////////////////////////////////////////////	
 	// create each node as wires
 	/////////////////////////////////////////////////////////////////////
+	int ibuff;	
 	for (inode = 0; inode < num_rr_nodes; inode++) {
+		//printf("%d, ", node_len[inode]);
 		rr_type = rr_node[inode].type;
-		//printf("%d\n", inode);
 		if (name_type[rr_type] != name_type[0] && name_type[rr_type] != name_type[1]) {
-			fprintf(fp, "wire n%d; //%s (%d,%d) #%d\n", inode, name_type[rr_type], \
+			fprintf(fp, "wire n%d; //%s %d (%d,%d) #%d\n", inode, name_type[rr_type], \
+				node_len[inode], rr_node[inode].xlow, rr_node[inode].ylow, rr_node[inode].ptc_num);
+			//fprintf(fp, "wire n%d_0;\n", inode);
+			//if the wire length is greater than desired
+			//divide it up into segments
+			for (ibuff = 0; ibuff < (int)ceil(((double)node_len[inode]/buffer_freq)); ibuff++) {
+				fprintf(fp, "wire n%d_%d;\n", inode, ibuff);
+			}
+				//if (direction_name[rr_node[inode].direction+1] == direction_name[1]) {
+					for (ibuff = (int)ceil(((double)node_len[inode]/buffer_freq))-1; ibuff >= 1; ibuff--) {
+						fprintf(fp, "buffer_wire buffer_%d_%d (.in(n%d_%d), .out(n%d_%d));\n", inode, ibuff, inode, ibuff-1, inode, ibuff);
+					}
+				//} else {
+				//	for (ibuff = 0; ibuff < (int)ceil(((double)node_len[inode]/buffer_freq))-1; ibuff++) {
+						//fprintf(fp, "assign n%d_%d = n%d_%d;\n", inode, ibuff, inode, ibuff+1);
+				//		fprintf(fp, "buffer_wire buffer_%d_%d (.in(n%d_%d), .out(n%d_%d));\n", inode, ibuff, inode, ibuff+1, inode, ibuff);
+				//	}
+				//}
+			
+			//if (long_short[inode] == 0) fprintf(fp, "wire n%d_long; //%s (%d,%d) #%d\n", inode, name_type[rr_type], \
+				rr_node[inode].xlow, rr_node[inode].ylow, rr_node[inode].ptc_num);
+			//else fprintf(fp, "wire n%d; //%s (%d,%d) #%d\n", inode, name_type[rr_type], \
 				rr_node[inode].xlow, rr_node[inode].ylow, rr_node[inode].ptc_num);
 		}
 	}
 	fprintf(fp, "wire [`CONFIG_SIZE-1:0] config_chain;\n\n");
 	
+	printf("instantiation muxes\n");	
 	/////////////////////////////////////////////////////////////////////	
 	// instantiate muxes for all nodes with fan_in > 1
 	//	configure the muxes by looking at the trace
@@ -752,18 +909,86 @@ void dump_rr_graph_as_verilog (INP const char *file_name, int* type_config_bits,
 	int imux = 0; //indexes the muxes
 	int mux_size = 0; //number of inputs to the mux (mux size)
 	int config_value = -1; //value to configure the mux
-	
+	int buff_num = 0; 
+
 	for (inode = 0; inode < num_rr_nodes; inode++) {
+		//if (inode == 25) return;
+		//else printf("---------\nnode %d\n", inode);
 		rr_type = rr_node[inode].type;
 		mux_size = rr_node[inode].fan_in;
 		config_value = -1;
-		
 		//SOURCE and SINK are not physical nodes
 		if ((name_type[rr_type] != name_type[0] && name_type[rr_type] != name_type[1]) && mux_size > 1) {
+			//if (node_len[inode]>buffer_freq) fprintf(fp, "mux%d_long mux_%d (.in({", mux_size, imux);	
 			fprintf(fp, "mux%d mux_%d (.in({", mux_size, imux);	
 			for (iconn=0; iconn<mux_size; iconn++) {
-				fprintf(fp, "n%d", node_fan_in[inode][iconn]);
-				if(node_trace[inode] == node_fan_in[inode][iconn]) {
+
+				if (name_type[rr_node[inode].type] == name_type[4]) { //output of mux is x direction
+					if (name_type[rr_node[node_fan_in[inode][iconn]].type] == name_type[4]) { //connecting wire is x direction	
+						if (direction_name[rr_node[node_fan_in[inode][iconn]].direction+1] == direction_name[1]) //incrementing direction
+							buff_num = rr_node[inode].xlow - rr_node[node_fan_in[inode][iconn]].xlow - 1;
+						else 
+							//printf("SHOULD NOT HAPPEN\n");
+							buff_num = rr_node[node_fan_in[inode][iconn]].xhigh - rr_node[inode].xhigh - 1;
+					} else { //connecting wire is y direction	
+						if (direction_name[rr_node[node_fan_in[inode][iconn]].direction+1] == direction_name[1]) //incrementing direction
+							buff_num = rr_node[inode].ylow - rr_node[node_fan_in[inode][iconn]].ylow;
+						else 
+							buff_num = rr_node[node_fan_in[inode][iconn]].yhigh - rr_node[inode].ylow - 1;
+					}
+				} else if (name_type[rr_node[inode].type] == name_type[5]) { //output of mux is y direction
+					if (name_type[rr_node[node_fan_in[inode][iconn]].type] == name_type[5]) { //connecting wire is y direction	
+						if (direction_name[rr_node[node_fan_in[inode][iconn]].direction+1] == direction_name[1]) //incrementing direction
+							buff_num = rr_node[inode].ylow - rr_node[node_fan_in[inode][iconn]].ylow - 1;
+						else 
+							buff_num = rr_node[node_fan_in[inode][iconn]].yhigh - rr_node[inode].yhigh - 1;
+					} else { //connecing wire is in x direction
+						if (direction_name[rr_node[node_fan_in[inode][iconn]].direction+1] == direction_name[1]) //incrementing direction
+							buff_num = rr_node[inode].xlow - rr_node[node_fan_in[inode][iconn]].xlow;
+						else 
+							buff_num = rr_node[node_fan_in[inode][iconn]].xhigh - rr_node[inode].xlow - 1;
+					} 
+				} else { //output of mux is a input/output pin
+					if (name_type[rr_node[node_fan_in[inode][iconn]].type] == name_type[5]) { //connecting wire is y direction	
+						if (direction_name[rr_node[node_fan_in[inode][iconn]].direction+1] == direction_name[1]) //incrementing direction
+							buff_num = rr_node[inode].ylow - rr_node[node_fan_in[inode][iconn]].ylow;
+						else 
+							buff_num = rr_node[node_fan_in[inode][iconn]].yhigh - rr_node[inode].yhigh;
+					} else { //connecing wire is in y direction
+						if (direction_name[rr_node[node_fan_in[inode][iconn]].direction+1] == direction_name[1]) //incrementing direction
+							buff_num = rr_node[inode].xlow - rr_node[node_fan_in[inode][iconn]].xlow;
+						else 
+							buff_num = rr_node[node_fan_in[inode][iconn]].xhigh - rr_node[inode].xlow;
+					}
+				}
+					//	printf("to node %d %d %d %d, from node %d %d %d %d, %d\n",\
+							rr_node[inode].xlow,\
+							rr_node[inode].xhigh,\
+							rr_node[inode].ylow,\
+							rr_node[inode].yhigh,\
+							rr_node[node_fan_in[inode][iconn]].xlow,\
+							rr_node[node_fan_in[inode][iconn]].xhigh,\
+							rr_node[node_fan_in[inode][iconn]].ylow,\
+							rr_node[node_fan_in[inode][iconn]].yhigh,\
+							direction_name[rr_node[node_fan_in[inode][iconn]].direction+1] == direction_name[1]);
+					/*if (name_type[rr_node[node_fan_in[inode][iconn]].type] == name_type[4]) { //XDIR
+						//incrementing direction
+						if (direction_name[rr_node[node_fan_in[inode][iconn]].direction+1] == direction_name[1])
+							buff_num = (rr_node[inode].xlow - rr_node[node_fan_in[inode][iconn]].xlow) -1;
+						else 
+							buff_num = node_len[node_fan_in[inode][iconn]] - (rr_node[inode].xhigh - rr_node[node_fan_in[inode][iconn]].xlow) -1;
+					} else if (name_type[rr_node[node_fan_in[inode][iconn]].type] == name_type[5]) { //YDIR
+						if (direction_name[rr_node[node_fan_in[inode][iconn]].direction+1] == direction_name[1])
+							buff_num = (rr_node[inode].ylow - rr_node[node_fan_in[inode][iconn]].ylow) -1;
+						else 
+							buff_num = node_len[node_fan_in[inode][iconn]] - (rr_node[inode].yhigh - rr_node[node_fan_in[inode][iconn]].ylow)-1;
+					} else if (name_type[rr_node[node_fan_in[inode][iconn]].type] == name_type[2]) { //YDIR
+						buff_num = 0;
+					}*/
+					if (name_type[rr_node[node_fan_in[inode][iconn]].type] == name_type[3])
+						fprintf(fp, "n%d", node_fan_in[inode][iconn]);
+					else fprintf(fp, "n%d_%d", node_fan_in[inode][iconn], buff_num/buffer_freq);
+				if (node_trace[inode] == node_fan_in[inode][iconn]) {
 					fprintf(fp, "/**/"); //mark the correct node for easy debugging
 					config_value = mux_size-iconn-1;
 				} else {
@@ -771,17 +996,31 @@ void dump_rr_graph_as_verilog (INP const char *file_name, int* type_config_bits,
 				}
 				if (iconn != mux_size-1) fprintf(fp, ", ");
 			}
-			
+			//printf("\n");	
 			//set configuration bits and record it to fp_config
 			//config_set(num_bits, value, config_array, config_array_size, file)
 			pre_config_array_size = config_array_size;
-			config_set((int)ceil((double)log(mux_size)/log(2)), config_value, &config_array, &config_array_size, fp_config);
+			if (config_value == -1) config_set((int)ceil((double)log(mux_size)/log(2)), 0, &config_array, &config_array_size, fp_config);
+			else config_set((int)ceil((double)log(mux_size)/log(2)), config_value, &config_array, &config_array_size, fp_config);
 			
-			if (config_value == -1) fprintf(fp_config, "[%d:%d] (mux_%d) unused\n", config_array_size-1, pre_config_array_size, imux);
+			if (config_value == -1) fprintf(fp_config, "[%d:%d] (mux_%d) %d unused\n", config_array_size-1, pre_config_array_size, imux, config_value);
 			else fprintf(fp_config, "[%d:%d] (mux_%d) %d\n", config_array_size-1, pre_config_array_size, imux, config_value);
-			
+			//fprintf(fp, "}), .out(n%d), .config_in(config_chain[%d:%d]), .config_reset(config_reset)); \n", inode, config_array_size-1, pre_config_array_size);
+			//if (long_short[inode]==0)fprintf(fp, "}), .out(n%d_long), .config_in(config_chain[%d:%d]), .config_reset(config_reset)); \n", inode, config_array_size-1, pre_config_array_size);
+			//if (direction_name[rr_node[inode].direction+1]==direction_name[1]){
+			//	fprintf(fp, "}), .out(n%d), .config_in(config_chain[%d:%d]), .config_reset(config_reset)); \n", inode, config_array_size-1, pre_config_array_size);
+			//	fprintf(fp, "buffer_wire buffer_%d (.in(n%d), .out(n%d_%d));\n", inode, inode, inode, 0);
+			//} else if (node_len[inode]>buffer_freq){
+			//	fprintf(fp, "}), .out(n%d), .config_in(config_chain[%d:%d]), .config_reset(config_reset)); \n", inode, config_array_size-1, pre_config_array_size);
+			//	fprintf(fp, "buffer_wire buffer_%d (.in(n%d), .out(n%d_%d));\n", inode, inode, inode, (int)ceil((double)node_len[inode]/buffer_freq)-1);
+			//} else {
 			fprintf(fp, "}), .out(n%d), .config_in(config_chain[%d:%d]), .config_reset(config_reset)); \n", inode, config_array_size-1, pre_config_array_size);
-						
+			if (name_type[rr_type] != name_type[2] && name_type[rr_type] != name_type[3]) 
+				fprintf(fp, "buffer_wire buffer_%d (.in(n%d), .out(n%d_0));\n", inode, inode, inode);
+			
+			if (cb_sb[inode] == 0) fprintf(fp_floorplan, "addInstToInstGroup area_%d_%d mux_%d\n", int(node_x[inode]), int(node_y[inode]), imux);
+			else fprintf(fp_floorplan, "addInstToInstGroup sb_%d_%d mux_%d\n", int(node_x[inode]), int(node_y[inode]), imux);
+		
 			imux++;
 
 			// keep track of biggest mux for mux definitions
@@ -799,6 +1038,7 @@ void dump_rr_graph_as_verilog (INP const char *file_name, int* type_config_bits,
 	free(node_fan_in);
 	free(node_trace);
 	
+	printf("connecting blocks\n");	
 	/////////////////////////////////////////////////////////////////////	
 	// connect up the blocks
 	// 	first, create wires with block_x_y naming for easy debugging
@@ -818,6 +1058,7 @@ void dump_rr_graph_as_verilog (INP const char *file_name, int* type_config_bits,
 			t_cap = grid[i][j].type->capacity;
 			config_size = type_config_bits[grid[i][j].type->index];
 			
+			fprintf(fp_floorplan, "addInstToInstGroup area_%d_%d %s_%d_%d\n", i, j, t_name, i, j);	
 			//this structure is used to translate node to nets for blocks to use
 			//[0] for clock, [1] for input, and [2] for output
 			int*** input_equivalence_net_order[3];
@@ -1017,67 +1258,84 @@ void dump_rr_graph_as_verilog (INP const char *file_name, int* type_config_bits,
 			fprintf(fp_config, "%d", (config_array[i]>>j)&1);
 		}
 	}*/
+	printf("size = %d/%d\n", pre_config_array_size, config_array_size);
 	for (i=ceil((double)config_array_size/8)-1; i>=0; i--) {
 		for (j=0; j<8; j++) {
-			if (i*8+(8-j-1) > pre_config_array_size-1) break;
+			if (i*8+(8-j-1) > pre_config_array_size-1) continue;
 			fprintf(fp_config, "%d", (config_array[i]>>j)&1);
 		}
 	}
+	printf("size = %d/%d\n", pre_config_array_size, config_array_size);
 	fprintf(fp, "config_helper config_helper");
 	fprintf(fp, "( .config_in(config_in), .config_out(config_chain[`CONFIG_SIZE-1:0]), ");
-	fprintf(fp, ".config_mode(config_mode), .reset(config_reset), .clk(config_clk) );\n\n");	
+	fprintf(fp, ".clk(config_clk) );\n\n");	
 
 
 	fprintf(fp, "endmodule\n\n");
 	
-	fprintf(fp, "module config_helper(\n");
-	fprintf(fp, "\tinput clk,\n");
-	fprintf(fp, "\tinput reset,\n");
-	fprintf(fp, "\tinput config_in,\n");
-	fprintf(fp, "\tinput config_mode,\n");
-	fprintf(fp, "\toutput reg [%d:0]config_out\n",(pre_config_array_size)-1);
-	fprintf(fp, ");\n\n");
+	FILE *fp_config_helper;
+	fp_config_helper = my_fopen("fpga_config.v", "w", 0);
+	
+	fprintf(fp_config_helper, "module config_helper(\n");
+	fprintf(fp_config_helper, "\tinput clk,\n");
+	//fprintf(fp_config_helper, "\tinput reset,\n");
+	fprintf(fp_config_helper, "\tinput config_in,\n");
+	fprintf(fp_config_helper, "\toutput reg [%d:0]config_out\n",(pre_config_array_size)-1);
+	fprintf(fp_config_helper, ");\n\n");
 
 	// only used for simulation
-	fprintf(fp, "initial begin\n");
+	fprintf(fp_config_helper, "initial begin\n");
 	int n=0;
-	fprintf(fp, "\tconfig_out = %d'b",pre_config_array_size );
+	fprintf(fp_config_helper, "\tconfig_out = %d'b",pre_config_array_size );
 	//for (i=0; i<ceil((double)config_array_size/8); i++) {
-	for (i=ceil((double)config_array_size/8)-1; i>=0; i--) {
-		//for (j=7; j>=0; j--) {
-		for (j=0; j<8; j++) {
+	/*for (i=0; i<ceil((double)config_array_size/8); i++) {
+		for (j=7; j>=0; j--) {
 			if (i*8+(8-j-1) > pre_config_array_size-1) break;
-			fprintf(fp, "%d", (config_array[i]>>j)&1);
-			n++;
+			fprintf(fp_config_helper, "%d", (config_array[i]>>j)&1);
 		}
+	}*/
+	for (i=ceil((double)config_array_size/8)-1; i>=0; i--) {
+		for (j=0; j<8; j++) {
+			if (i*8+(8-j-1) > pre_config_array_size-1) continue;
+			fprintf(fp_config_helper, "%d", (config_array[i]>>j)&1);
+			n++;
+		}	
 	}
-	fprintf(fp, ";\nend\n\n");
+	//for (i=ceil((double)config_array_size/8)-1; i>=0; i--) {
+		//for (j=7; j>=0; j--) {
+		//for (j=0; j<8; j++) {
+		//	if (i*8+(8-j-1) > pre_config_array_size-1) continue;
+			//printf("[%d]%d\n", (i)*8+(8-1-j), (config_array[i]>>j)&1);
+			//fprintf(fp_config, "%d", (config_array[i]>>j)&1);
+			//if (i*8+(8-j-1) > pre_config_array_size-1) break;
+		//	fprintf(fp_config_helper, "%d", (config_array[i]>>j)&1);
+		//	n++;
+		//}
+	//}
+	fprintf(fp_config_helper, ";\nend\n\n");
 
 	int n_config_helper = pre_config_array_size/100000;
 	
 	if (n_config_helper < 1) {
-		fprintf(fp, "wire [%d:0]config_wire;\n\n", (pre_config_array_size%100000)-1);
-		fprintf(fp, "always @ (posedge clk) begin\n");
-		fprintf(fp, "\tif (config_mode) begin\n");
-		fprintf(fp, "\t\tconfig_out<=config_wire;\n\tend\nend\n\n");
-		fprintf(fp, "assign config_wire = {config_out[%d:0], config_in};\n\n", (pre_config_array_size%100000)-2);
+		fprintf(fp_config_helper, "wire [%d:0]config_wire;\n\n", (pre_config_array_size%100000)-1);
+		fprintf(fp_config_helper, "always @ (posedge clk) begin\n");
+		fprintf(fp_config_helper, "\tconfig_out<=config_wire;\nend\n\n");
+		fprintf(fp_config_helper, "assign config_wire = {config_out[%d:0], config_in};\n\n", (pre_config_array_size%100000)-2);
 	} else {
 		for (i=0; i<n_config_helper; i++) {
-			fprintf(fp, "wire [%d:0]config_wire_%d;\n\n", (100000*(i+1))-1, i);
-			fprintf(fp, "always @ (posedge clk) begin\n");
-			fprintf(fp, "\tif (config_mode) begin\n");
-			fprintf(fp, "\t\tconfig_out[%d:%d]<=config_wire_%d;\n\tend\nend\n\n", (100000*(i+1))-1, (100000*(i)), i);
-			if (i==0) fprintf(fp, "assign config_wire_%d = {config_out[%d:0], config_in};\n\n", i, (100000*(i+1))-2);
-			else fprintf(fp, "assign config_wire_%d = {config_out[%d:%d]};\n\n", i, (100000*(i+1))-2, (100000*(i))-1);
+			fprintf(fp_config_helper, "wire [%d:0]config_wire_%d;\n\n", (100000*(i+1))-1, i);
+			fprintf(fp_config_helper, "always @ (posedge clk) begin\n");
+			fprintf(fp_config_helper, "\t\tconfig_out[%d:%d]<=config_wire_%d;\nend\n\n", (100000*(i+1))-1, (100000*(i)), i);
+			if (i==0) fprintf(fp_config_helper, "assign config_wire_%d = {config_out[%d:0], config_in};\n\n", i, (100000*(i+1))-2);
+			else fprintf(fp_config_helper, "assign config_wire_%d = {config_out[%d:%d]};\n\n", i, (100000*(i+1))-2, (100000*(i))-1);
 		}
-		fprintf(fp, "wire [%d:0]config_wire_%d;\n\n", (pre_config_array_size%100000)-1, i);
-		fprintf(fp, "always @ (posedge clk) begin\n");
-		fprintf(fp, "\tif (config_mode) begin\n");
-		fprintf(fp, "\t\tconfig_out[%d:%d]<=config_wire_%d;\n\tend\nend\n\n", (100000*(i))+(pre_config_array_size%100000)-1, (100000*(i)), i);
-		fprintf(fp, "assign config_wire_%d = {config_out[%d:%d]};\n\n", i, (100000*(i))+(pre_config_array_size%100000)-2, (100000*(i))-1);
+		fprintf(fp_config_helper, "wire [%d:0]config_wire_%d;\n\n", (pre_config_array_size%100000)-1, i);
+		fprintf(fp_config_helper, "always @ (posedge clk) begin\n");
+		fprintf(fp_config_helper, "\t\tconfig_out[%d:%d]<=config_wire_%d;\nend\n\n", (100000*(i))+(pre_config_array_size%100000)-1, (100000*(i)), i);
+		fprintf(fp_config_helper, "assign config_wire_%d = {config_out[%d:%d]};\n\n", i, (100000*(i))+(pre_config_array_size%100000)-2, (100000*(i))-1);
 	}
 		
-	fprintf(fp, "endmodule\n");
+	fprintf(fp_config_helper, "endmodule\n");
 	
 	//USE BELOW CODE TO DEBUG BITSTREAM
 	/*fprintf(fp_config, "\n");
@@ -1088,7 +1346,7 @@ void dump_rr_graph_as_verilog (INP const char *file_name, int* type_config_bits,
 		}
 	}
 	fprintf(fp_config, "\n");*/
-	
+	fclose(fp_config_helper);
 	fclose(fp);
 }
 

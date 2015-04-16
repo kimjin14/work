@@ -171,6 +171,8 @@ void config_set_fle_lut_rec (t_pb *pb, char* lut_config, int fle_num, int* lut_c
 				config_set(1, 0, config_array, config_array_size, fp);
 			}
 			return;
+		}else {
+			//SHOULD BE SOMETHING HERE?
 		}
 	}
 
@@ -211,7 +213,7 @@ void config_set_fle_mode_rec (t_pb *pb, char* lut_config, int fle_num, int* lut_
 	
 	if (pb->name == NULL) {
 		fprintf(fp, "\t[%d:%d] unused\n", *config_array_size, *config_array_size);
-		config_set(1, 0, config_array, config_array_size, fp);
+		config_set(1, 1, config_array, config_array_size, fp);
 		return;
 	}
 	
@@ -222,12 +224,17 @@ void config_set_fle_mode_rec (t_pb *pb, char* lut_config, int fle_num, int* lut_
 						pb->child_pbs[j][k].pb_graph_node->pb_type->name)==0) {
 					if (pb->child_pbs[j][k].pb_graph_node->pb_type->num_input_pins == 6) {
 						fprintf(fp, "\t[%d:%d] 6 LUT mode [%d]\n", *config_array_size, *config_array_size, 0);
+						fprintf(fp_sdc, "set_disable_timing fle_%d/lut5_1\n", fle_num);
+						fprintf(fp_sdc, "set_disable_timing fle_%d/fracture_lut_in_4/in[1]\n", fle_num);
+						fprintf(fp_sdc, "set_disable_timing fle_%d/fracture_lut_in_5/in[1]\n", fle_num);
 						config_set(1, 0, config_array, config_array_size, fp);			
 						return;
 					} else if (pb->child_pbs[j][k].pb_graph_node->pb_type->num_input_pins == 5) {
 						fprintf(fp, "\t[%d:%d] 5 LUT mode [%d]\n", *config_array_size, *config_array_size, 1);
 						config_set(1, 1, config_array, config_array_size, fp);
-						fprintf(fp_sdc, "set_disable_timing fle_%d/lut6\n", fle_num);	
+						fprintf(fp_sdc, "set_disable_timing fle_%d/lut6\n", fle_num);
+						fprintf(fp_sdc, "set_disable_timing fle_%d/fracture_lut_in_4/in[0]\n", fle_num);
+						fprintf(fp_sdc, "set_disable_timing fle_%d/fracture_lut_in_5/in[0]\n", fle_num);
 						return;
 					}
 					config_set_fle_mode_rec(&pb->child_pbs[j][k], lut_config, fle_num, lut_cnt,
@@ -309,16 +316,16 @@ void config_set_fle_bypass_rec (t_pb *pb, int mode, int fle_num, int* lut_cnt,
 	//CURRENTLY only handles unused FLEs
 	//NEED TO SUPPORT unused half of FLE set as 2 5-LUT mode
 	//int num_input = pb_graph_node->pb_type->num_input_pins;
-	if (pb->name == NULL) {
+	if (pb->mode!=1 && pb->name == NULL) {
 		if (pb_graph_node->pb_type->num_input_pins > 5) {
-			fprintf(fp, "\t[%d:%d] [%d]\n", *config_array_size, *config_array_size, 0);
+			fprintf(fp, "\t[%d:%d] [%d]9\n", *config_array_size, *config_array_size, 0);
 			config_set(1, 0, config_array, config_array_size, fp);
-			fprintf(fp, "\t[%d:%d] [%d]\n", *config_array_size, *config_array_size, 0);
+			fprintf(fp, "\t[%d:%d] [%d]10\n", *config_array_size, *config_array_size, 0);
 			config_set(1, 0, config_array, config_array_size, fp);
 			fprintf(fp_sdc, "set_disable_timing fle_%d/mux_bypass_*/in*\n", fle_num);
 			fprintf(fp_sdc, "set_disable_timing fle_%d/ff_*/D\n", fle_num);
 		} else {
-			fprintf(fp, "\t[%d:%d] [%d]\n", *config_array_size, *config_array_size, 0);
+			fprintf(fp, "\t[%d:%d] [%d]11 %d\n", *config_array_size, *config_array_size, 0, pb->mode);
 			config_set(1, 0, config_array, config_array_size, fp);
 			fprintf(fp_sdc, "set_disable_timing fle_%d/mux_bypass_%d/in*\n", fle_num, *lut_cnt);
 			fprintf(fp_sdc, "set_disable_timing fle_%d/ff_%d/D\n", fle_num, *lut_cnt);
@@ -573,16 +580,19 @@ void config_set_pins(t_pb_graph_pin **pb_graph_pins, int num_ports, \
 							} else {
 								new_net_num = rr_graph_of_cluster[edge_pin_count_in_cluster].net_num;
 							}
-
+							//need to take care of
+							// 1. mux have repeated inputs (happens in ALU4) - using flag_found_as_input
+							// 2. bypass wire output being assigned to itself (happens in pdc) - using placement_index
 							if (net_num == new_net_num && !flag_found_as_input) {
 								if (port->type == OUT_PORT) {
 									config_val = fan_in-k-1;
 								}
 								else {
 									config_val = fan_in-k; //NO -1 for inputs only since there's a GND signal
-									flag_found_as_input = 1;
+									if(edge_port->type == IN_PORT || ((edge_port->type == OUT_PORT) && (pb_graph_pins[i][j].input_edges[k]->input_pins[m]->parent_node->placement_index != pb_graph_pins[i][j].parent_node->placement_index))) flag_found_as_input = 1;
 									//break;
 								}
+								fprintf(fp, "%d(%d %d %d %d) ", net_num, pb_graph_pins[i][j].input_edges[k]->input_pins[m]->parent_node->placement_index, edge_port->type, config_val, edge_pin_count_in_cluster);
 							}  else {
 								if (port->type == OUT_PORT) {
 									fprintf(fp_sdc, "set_disable_timing %s_%d/%s[%d]\n", \
