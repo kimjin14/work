@@ -10,15 +10,15 @@
 #include "dump_bitstream.h"
 #include "vpr_utils.h"
 
-int buffer_freq = 2;
+int buffer_freq = 3;
 
 void dump_arch_as_verilog () {
 	int *pb_graph_config_bits = (int*)malloc(num_types*sizeof(int));
 	int max_mux_size = 0;
-	dump_pb_graph_as_verilog("fpga_modules.v", pb_graph_config_bits, &max_mux_size);
-	dump_rr_graph_as_verilog("fpga_top.v", pb_graph_config_bits, &max_mux_size);
+	dump_pb_graph_as_verilog("FPGA/fpga_modules.v", pb_graph_config_bits, &max_mux_size);
+	dump_rr_graph_as_verilog("FPGA/fpga_top.v", pb_graph_config_bits, &max_mux_size);
 	max_mux_size++; // for GROUND signal for the mux
-	dump_mux_as_verilog("fpga_mux.v", &max_mux_size);
+	dump_mux_as_verilog("FPGA/fpga_mux.v", &max_mux_size);
 
 }
 
@@ -28,184 +28,289 @@ void dump_mux_as_verilog (INP const char *file_name, int* mux_max_size) {
 	/////////////////////////////////////////////////////////////////////	
 	//create muxes
 	/////////////////////////////////////////////////////////////////////
-	for (int i=2; i<mux_max_size[0]+1; i++) {
-		fprintf(fp, "module mux%d (\n", i);
-		fprintf(fp, "\tinput [%d:0]in,\n", i-1);
-		fprintf(fp, "\tinput [%d:0]config_in,\n", (int)ceil(log(i)/log(2))-1);
-		fprintf(fp, "\tinput config_reset,\n");				
-		//fprintf(fp, "\toutput out\n");				
-		fprintf(fp, "\toutput reg out\n");				
-		fprintf(fp, ");\n\n");
-		//fprintf(fp, "reg mux_out;\n");
-		fprintf(fp, "always @ (*) begin\n");
-		fprintf(fp, "\tif (config_reset) begin\n");
-		//fprintf(fp, "\t\tmux_out = 1'b1;\n");
-		fprintf(fp, "\t\tout = 1'b1;\n");
-		fprintf(fp, "\tend else begin\n");
-		fprintf(fp, "\t\tcase(config_in)\n");	
-		for (int j=0; j<i; j++) {
-			//fprintf(fp, "\t\t\t%d'd%d: mux_out = in[%d];\n", (int)ceil(log(i)/log(2)), j, j);
-			fprintf(fp, "\t\t\t%d'd%d: out = in[%d];\n", (int)ceil(log(i)/log(2)), j, j);
-		}	
-		//fprintf(fp, "\t\t\tdefault: mux_out = 1'b1;\n");
-		fprintf(fp, "\t\t\tdefault: out = 1'b1;\n");
-		fprintf(fp, "\t\tendcase\n");	
-		fprintf(fp, "\tend\n");
-		fprintf(fp, "end\n\n");
-		//fprintf(fp, "buffer_wire buff_out (.in(mux_out), .out(out));\n");				
-		fprintf(fp, "endmodule\n\n");
+
+	int CMUX_SIZE = 16;
+
+
+		for (int i=2; i<mux_max_size[0]+1; i++) {
+
+			int n_i = i; //total number if inputs
+			int n_m16 = ceil((double)((int)((double)(n_i-1)/8))/2); //number of mux16		
+			int n_r = n_i-(16*(n_m16)); // rest of inputs
+			int n_sel = (int)ceil(log(i)/log(2));	//number of select signals		
+			if (n_sel>3) n_sel+=2;
+
+			fprintf(fp, "module mux%d (\n", i);
+			fprintf(fp, "\tinput [%d:0]in,\n", n_i-1);
+			fprintf(fp, "\tinput [%d:0]config_in,\n", n_sel-1);
+			fprintf(fp, "\tinput config_rst,\n");				
+			fprintf(fp, "\toutput out\n");				
+			fprintf(fp, ");\n\n");
+			fprintf(fp, "reg out_mux;\n");
+
+			int j;
+			
+			//instantiate mux16
+			//there should be a mux for every 16 input and a mux if remaining is greater than 8
+			for (j=0; j<n_m16; j++) {
+				fprintf(fp, "wire out_mux16_%d;\n", j);
+				fprintf(fp, "NPASSMUX16 mux_%d (", j);
+				for (int k=0; k<16; k++) {
+					if ((k+(16*j))>=n_i) fprintf(fp, ".I%d(1'b0), ", k);
+					else fprintf(fp, ".I%d(in[%d]), ", k, k+(16*j));
+				}
+				for (int k=0; k<6; k++) {
+					if (k<n_sel) fprintf(fp, ".S%d(config_in[%d]), ", k, k);
+					else fprintf(fp, ".S%d(1'b0), ", k);
+				}
+				fprintf(fp, ".O(out_mux16_%d));\n\n", j);
+			}
+
+			//instantiate mux for remainder
+			//always statement since you don't know the size
+			//n_r can be negative if remainder was greater than 8 but less than 16
+			fprintf(fp, "reg out_r;\n\n");
+			fprintf(fp, "always @ (*) begin\n");
+			if (n_r>1) {
+				if (n_m16>0) fprintf(fp, "\tcase(config_in[%d:%d])\n", 5, 0);
+				else fprintf(fp, "\tcase(config_in[%d:%d])\n", (int)ceil(log(n_r)/log(2))-1, 0);
+				for (j=0; j<n_r; j++) {
+					if (n_m16>0) fprintf(fp, "\t\t%d'b%d%d%d%d%d%d: out_r = in[%d];\n", 6, (j>>3)&1, (j>>2)&1, \
+						((j>>1)&1)&(j&1), ((j>>1)&1)&!(j&1), !((j>>1)&1)&(j&1), !((j>>1)&1)&!(j&1), n_m16*16+j);
+					else fprintf(fp, "\t\t%d'd%d: out_r = in[%d];\n", (int)ceil(log(n_r)/log(2)), j, n_m16*16+j);
+				}
+				fprintf(fp, "\t\tdefault: out_r = 1'b1;\n");
+                                fprintf(fp, "\tendcase\n");
+			} else if (n_r==1) fprintf(fp, "\tout_r = in[%d];\n", n_m16*16);
+	                fprintf(fp, "end\n\n");
+			
+			//create second level of mux
+			//must have more than 6 config cells since it used a MUX16
+			int n_sel_used;
+			fprintf(fp, "always @ (*) begin\n");
+			if (n_m16+(int)(n_r>0) > 1) {
+				fprintf(fp, "\tcase(config_in[%d:%d])\n", n_sel-1, 6);
+				for (j=0; j<n_m16; j++) fprintf(fp, "\t\t%d'd%d: out_mux = out_mux16_%d;\n", (int)ceil(log(1+n_m16)/log(2)), j, j);
+				if (n_r>0) fprintf(fp, "\t\t%d'd%d: out_mux = out_r;\n", (int)ceil(log(1+n_m16)/log(2)), j);
+		                fprintf(fp, "\t\tdefault: out_mux = 1'b1;\n");
+			        fprintf(fp, "\tendcase\n");
+			} else if (n_m16 > 0) fprintf(fp, "\tout_mux = out_mux16_0;\n"); 
+			else fprintf(fp, "\tout_mux = out_r;\n");
+                	fprintf(fp, "end\n\n");
+
+/*
+			if (n_r>0&&n_m16>0) {
+				fprintf(fp, "\nalways @ (*) begin\n");
+				fprintf(fp, "\tcase(config_in[%d:%d])\n", (int)ceil(log(1+n_m16)/log(2))+(int)(n_m16>0)*6-1, (int)(n_m16>0)*6);	
+				for (j=0; j<n_m16; j++) fprintf(fp, "\t\t%d'd%d: out_mux = out_mux16_%d;\n", (int)ceil(log(1+n_m16)/log(2)), j, j);
+				fprintf(fp, "\t\t%d'd%d: out_mux = out_r;\n", (int)ceil(log(1+n_m16)/log(2)), j);
+				fprintf(fp, "\t\tdefault: out_mux = 1'b1;\n");
+				fprintf(fp, "\tendcase\n");	
+				fprintf(fp, "end\n\n");
+			} else if (n_m16==0){
+				fprintf(fp, "\nalways @ (*) begin\n");
+				fprintf(fp, "\tout_mux = out_r;\nend\n\n");
+			} else {
+				fprintf(fp, "\nalways @ (*) begin\n");
+				fprintf(fp, "\tout_mux = out_mux16_0;\nend\n\n");
+			}
+*//*
+			for (j=0; j<n_m16; j++) {
+				fprintf(fp, "wire out_mux16_%d;\n", j);
+				fprintf(fp, "NPASSMUX16 mux_%d (", j);
+				for (int k=0; k<16; k++) {
+					if ((k+(16*j))>=n_i) fprintf(fp, ".I%d(1'bz), ", k);
+					else fprintf(fp, ".I%d(in[%d]), ", k, k+(16*j));
+				}
+				for (int k=0; k<6; k++) {
+					if (k<n_sel) fprintf(fp, ".S%d(config_in[%d]), ", k, k);
+					else fprintf(fp, ".S%d(1'b0), ", k);
+				}
+				fprintf(fp, ".OUT(out_mux16_%d));\n", j);
+			}
 		
-		fprintf(fp, "module mux%d_long (\n", i);
-		fprintf(fp, "\tinput [%d:0]in,\n", i-1);
-		fprintf(fp, "\tinput [%d:0]config_in,\n", (int)ceil(log(i)/log(2))-1);
-		fprintf(fp, "\tinput config_reset,\n");				
-		fprintf(fp, "\toutput reg out\n");				
-		fprintf(fp, ");\n\n");
-		fprintf(fp, "always @ (*) begin\n");
-		fprintf(fp, "\tif (config_reset) begin\n");
-		fprintf(fp, "\t\tout = 1'b1;\n");
-		fprintf(fp, "\tend else begin\n");
-		fprintf(fp, "\t\tcase(config_in)\n");	
-		for (int j=0; j<i; j++) {
-			fprintf(fp, "\t\t\t%d'd%d: out = in[%d];\n", (int)ceil(log(i)/log(2)), j, j);
-		}	
-		fprintf(fp, "\t\t\tdefault: out = 1'b1;\n");
-		fprintf(fp, "\t\tendcase\n");	
-		fprintf(fp, "\tend\n");
-		fprintf(fp, "end\n\n");				
-		fprintf(fp, "endmodule\n\n");		
-	}
-	fclose(fp);
-}
-	
-/* This function calls the recursive dump pb function for all the types.
-file_name: where the verilog for the pb will be dumped
-pb_graph_config_bits: used to keep information on how many config bits are required */
+			if (n_m16+n_r>8) {
+				fprintf(fp, "wire out_mux16_%d;\n", j);
+				fprintf(fp, "NPASSMUX16 mux_%d (", j);
+				for (int k=j*16; k<(j+1)*16; k++) {
+					if (k>=n_i) fprintf(fp, ".I%d(1'bz), ", k);
+					else fprintf(fp, ".I%d(in[%d]), ", k, k);
+				}
+				fprintf(fp, ".OUT(out_mux16_%d));\n", j);
+			} else if (n_r>0) {
+				fprintf(fp, "\nalways @ (*) begin\n");
+				fprintf(fp, "\tcase(config_in[%d:%d])\n", n_sel-1, 6);	
+				for (j=0; j<n_m16; j++) fprintf(fp, "\t\t%d'd%d: out_mux = out_mux16_%d;\n", (int)ceil(log(i)/log(2)), j, j);
+				for (j=n_m16; j<n_r; j++) fprintf(fp, "\t\t%d'd%d: out_mux = in[%d];\n", (int)ceil(log(i)/log(2)), j, n_m16*16+j);
+				fprintf(fp, "\t\tdefault: out_mux = 1'b1;\n");
+				fprintf(fp, "\tendcase\n");	
+				fprintf(fp, "end\n\n");
+			} else {
+				fprintf(fp, "\nalways @ (*) begin\n");
+				fprintf(fp, "\tout_mux = out_mux16_0;\nend\n\n");
+			} 
+				
+*/
 
-void dump_pb_graph_as_verilog (INP const char *file_name, int* pb_graph_config_bits,\
-	int* mux_max_size) {
-	
-	FILE *fp;
-	int i;
 
-	fp = my_fopen(file_name, "w", 0);
-	
-	fprintf(fp, "//////////////////////////////////\n");
-	fprintf(fp, "//physical block modules\n");
-	fprintf(fp, "//////////////////////////////////\n\n");
-	
-	//for all blocks (not <EMPTY>), recursively dump physcal blocks
-	for (i = 0; i < num_types; i++) {
-		if (type_descriptors[i].pb_graph_head) {
-			pb_graph_config_bits[i] = dump_pb_rec_verilog(type_descriptors[i].pb_graph_head, \
-				fp, type_descriptors[i].capacity, mux_max_size);						
+
+
+		/*	if (i>8) {
+				fprintf(fp, "wire [%d:0]out_mux_temp;\n", (int)ceil((double)i/16));
+				fprintf(fp, "wire out_mux\n\n");
+				for (int j=0; j<(int)ceil((double)i/16); j++) {	
+					fprintf(fp, "NPASSMUX16 mux_%d (", j);
+					for (int k=0; k<i; k++) fprintf(fp, ".I%d(in[%d]), ", k, k);
+					for (int k=i; k<16*(int)ceil((double)i/16); k++) fprintf(fp, ".I%d(1'bz), ", k);
+					fprintf(fp, ".OUT());\n");
+				}
+				fprintf(fp, "\n");
+			} else {
+				fprintf(fp, "reg out_mux;\n\n");
+				
+				fprintf(fp, "always @ (*) begin\n");
+				fprintf(fp, "\tcase(config_in)\n");	
+				for (int j=0; j<i; j++) {
+					fprintf(fp, "\t\t%d'd%d: out_mux = in[%d];\n", (int)ceil(log(i)/log(2)), j, j);
+				}	
+				fprintf(fp, "\t\tdefault: out_mux = 1'b1;\n");
+				fprintf(fp, "\tendcase\n");	
+				fprintf(fp, "end\n\n");
+			}*/
+			fprintf(fp, "assign out = config_rst?1'b1:out_mux;\n\n");
+			fprintf(fp, "endmodule\n\n");
 		}
+		fclose(fp);
 	}
-	
-	//print module latch
-	/*fprintf(fp, "/////////////////////////////////////////////////////\n");
-	fprintf(fp, "///////////////////// latch /////////////////////////\n");
-	fprintf(fp, "/////////////////////////////////////////////////////\n");
-	fprintf(fp, "module latch ( input clk, input reset, input en, input in, output reg out );\n\n");
-	fprintf(fp, "always @ (posedge clk) begin\n");
-	fprintf(fp, "\tif(!reset) begin\n\t\tout<=0;\n\tend\n");
-	fprintf(fp, "\telse if (en) begin\n\t\tout<=in;\n\tend\n");
-	fprintf(fp, "end\n\n");
-	fprintf(fp, "endmodule\n");
-	*/
-	fclose(fp);
-}
+		
+	/* This function calls the recursive dump pb function for all the types.
+	file_name: where the verilog for the pb will be dumped
+	pb_graph_config_bits: used to keep information on how many config bits are required */
 
-/* This function recursively prints out pb tree as modules (from the bottom of tree - lut and ff).
-pb_graph_node: current node being printed
-fp: file where the verilog is being dumped
-capacity: capacity of the block (to group them together)
+	void dump_pb_graph_as_verilog (INP const char *file_name, int* pb_graph_config_bits,\
+		int* mux_max_size) {
+		
+		FILE *fp;
+		int i;
 
-returns number of configuration bits required for node and its children
-
-This function does NOT accomodate "modes" (for loops commented out with i set to 0)
-Only a special case for fracturable lut with 2nd mode named "lut5inter".*/
-
-int dump_pb_rec_verilog (const INP t_pb_graph_node *pb_graph_node, INP FILE *fp, \
-	INP int capacity, int* mux_max_size) {
-
-	int i, j, k, l;
-	int n_config_prev_total, n_config;
-	int *n_config_used; 
-	int** n_config_prev_per_child;
-	
-	int flag_first;
-	int num_input;
-	
-	t_pb_graph_pin **pb_graph_pins;
-	t_port *port;
-	
-	//////////////////////////////////////////////////////
-	// FLE special case
-	//	- if a pb_type with a name "fle" is detected, fracturable lut
-	//		in EArch is instantiated
-	//	- if you do not want a fracturable lut, change the pb_type name to
-	//		something other than "fle"
-	//////////////////////////////////////////////////////
-	if (strcmp(pb_graph_node->pb_type->name, "fle")==0) {
-		assert(pb_graph_node->pb_type->num_modes>1);
-
+		fp = my_fopen(file_name, "w", 0);
+		
+		fprintf(fp, "//////////////////////////////////\n");
+		fprintf(fp, "//physical block modules\n");
+		fprintf(fp, "//////////////////////////////////\n\n");
+		
+		//for all blocks (not <EMPTY>), recursively dump physcal blocks
+		for (i = 0; i < num_types; i++) {
+			if (type_descriptors[i].pb_graph_head) {
+				pb_graph_config_bits[i] = dump_pb_rec_verilog(type_descriptors[i].pb_graph_head, \
+					fp, type_descriptors[i].capacity, mux_max_size);						
+			}
+		}
+		
+		//print module latch
 		/*fprintf(fp, "/////////////////////////////////////////////////////\n");
-		fprintf(fp, "/////////////////////// fle /////////////////////////\n");
+		fprintf(fp, "///////////////////// latch /////////////////////////\n");
 		fprintf(fp, "/////////////////////////////////////////////////////\n");
-		fprintf(fp, "module fle (\n");
-		fprintf(fp, "\tinput [65:0]config_in,\n"); 
-		fprintf(fp, "\tinput config_mode,\n");
-		fprintf(fp, "\tinput clk,\n");
-		fprintf(fp, "\tinput [7:0]fle_in,\n"); 
-		fprintf(fp, "\toutput [1:0]fle_out\n");
-		fprintf(fp, ");\n\n");
-		fprintf(fp, "endmodule\n\n");
-		
-		fprintf(fp, "/////////////////////////////////////////////////////\n");
-		fprintf(fp, "///////////////////// ff /////////////////////////\n");
-		fprintf(fp, "/////////////////////////////////////////////////////\n");
-		fprintf(fp, "module ff ( input D, input clk, output reg Q );\n\n");
-		fprintf(fp, "always @ (posedge clk) begin\n\tQ <= D;\nend\n\n");
-		fprintf(fp, "endmodule\n\n");
-		
-		num_input = 6;
-		
-		fprintf(fp, "/////////////////////////////////////////////////////\n");
-		fprintf(fp, "/////////////////////// lut /////////////////////////\n");
-		fprintf(fp, "/////////////////////////////////////////////////////\n");
-		fprintf(fp, "module lut%d ( input [%d:0]config_in, input config_mode, input [%d:0]in, output reg out );\n\n", num_input, (int)pow(2, num_input)-1, num_input-1);	
-		fprintf(fp, "wire [%d:0]in_flip;\n", num_input-1);
-		fprintf(fp, "assign in_flip = {");
-		for (j=0; j<num_input; j++) {
-			fprintf(fp, "in[%d]", j);
-			if (j!= num_input-1) fprintf(fp, ", ");
-		}			
-		fprintf(fp, "};\n\n");
-		fprintf(fp, "always @ (*) begin\n");			
-		fprintf(fp, "\tif (config_mode) begin\n");
-		fprintf(fp, "\t\tout = 1'b1;\n");
-		fprintf(fp, "\tend else begin\n");
-		fprintf(fp, "\t\tcase(in_flip)\n");
-		for (j=0; j<(int)pow(2, num_input); j++) {
-			fprintf(fp, "\t\t\t%d'd%d: out = config_in[%d];\n", num_input, j, j);
-		}		
-		fprintf(fp, "\t\tendcase\n\tend\nend\n\n");					
-		fprintf(fp, "endmodule\n\n");*/
-	
-		
-		return 67;
+		fprintf(fp, "module latch ( input clk, input reset, input en, input in, output reg out );\n\n");
+		fprintf(fp, "always @ (posedge clk) begin\n");
+		fprintf(fp, "\tif(!reset) begin\n\t\tout<=0;\n\tend\n");
+		fprintf(fp, "\telse if (en) begin\n\t\tout<=in;\n\tend\n");
+		fprintf(fp, "end\n\n");
+		fprintf(fp, "endmodule\n");
+		*/
+		fclose(fp);
 	}
 
-	//////////////////////////////////////////////////////
-	// Bottom of the tree: primitives
-	//	- LUT is recognized by having a mode called "wire"
-	//	- FF is recognized by having a blif_model ".latch"
-	//	- IO is recognized by having child with a blif_model ".input or .output"
-	//////////////////////////////////////////////////////
-	
-	for (i=0; i<pb_graph_node->pb_type->num_modes; i++) {
-		if (strcmp(pb_graph_node->pb_type->modes[i].name, "wire")==0) {
+	/* This function recursively prints out pb tree as modules (from the bottom of tree - lut and ff).
+	pb_graph_node: current node being printed
+	fp: file where the verilog is being dumped
+	capacity: capacity of the block (to group them together)
+
+	returns number of configuration bits required for node and its children
+
+	This function does NOT accomodate "modes" (for loops commented out with i set to 0)
+	Only a special case for fracturable lut with 2nd mode named "lut5inter".*/
+
+	int dump_pb_rec_verilog (const INP t_pb_graph_node *pb_graph_node, INP FILE *fp, \
+		INP int capacity, int* mux_max_size) {
+
+		int i, j, k, l;
+		int n_config_prev_total, n_config;
+		int *n_config_used; 
+		int** n_config_prev_per_child;
+		
+		int flag_first;
+		int num_input;
+		
+		t_pb_graph_pin **pb_graph_pins;
+		t_port *port;
+		
+		//////////////////////////////////////////////////////
+		// FLE special case
+		//	- if a pb_type with a name "fle" is detected, fracturable lut
+		//		in EArch is instantiated
+		//	- if you do not want a fracturable lut, change the pb_type name to
+		//		something other than "fle"
+		//////////////////////////////////////////////////////
+		if (strcmp(pb_graph_node->pb_type->name, "fle")==0) {
+			assert(pb_graph_node->pb_type->num_modes>1);
+
+			/*fprintf(fp, "/////////////////////////////////////////////////////\n");
+			fprintf(fp, "/////////////////////// fle /////////////////////////\n");
+			fprintf(fp, "/////////////////////////////////////////////////////\n");
+			fprintf(fp, "module fle (\n");
+			fprintf(fp, "\tinput [65:0]config_in,\n"); 
+			fprintf(fp, "\tinput config_mode,\n");
+			fprintf(fp, "\tinput clk,\n");
+			fprintf(fp, "\tinput [7:0]fle_in,\n"); 
+			fprintf(fp, "\toutput [1:0]fle_out\n");
+			fprintf(fp, ");\n\n");
+			fprintf(fp, "endmodule\n\n");
+			
+			fprintf(fp, "/////////////////////////////////////////////////////\n");
+			fprintf(fp, "///////////////////// ff /////////////////////////\n");
+			fprintf(fp, "/////////////////////////////////////////////////////\n");
+			fprintf(fp, "module ff ( input D, input clk, output reg Q );\n\n");
+			fprintf(fp, "always @ (posedge clk) begin\n\tQ <= D;\nend\n\n");
+			fprintf(fp, "endmodule\n\n");
+			
+			num_input = 6;
+			
+			fprintf(fp, "/////////////////////////////////////////////////////\n");
+			fprintf(fp, "/////////////////////// lut /////////////////////////\n");
+			fprintf(fp, "/////////////////////////////////////////////////////\n");
+			fprintf(fp, "module lut%d ( input [%d:0]config_in, input config_mode, input [%d:0]in, output reg out );\n\n", num_input, (int)pow(2, num_input)-1, num_input-1);	
+			fprintf(fp, "wire [%d:0]in_flip;\n", num_input-1);
+			fprintf(fp, "assign in_flip = {");
+			for (j=0; j<num_input; j++) {
+				fprintf(fp, "in[%d]", j);
+				if (j!= num_input-1) fprintf(fp, ", ");
+			}			
+			fprintf(fp, "};\n\n");
+			fprintf(fp, "always @ (*) begin\n");			
+			fprintf(fp, "\tif (config_mode) begin\n");
+			fprintf(fp, "\t\tout = 1'b1;\n");
+			fprintf(fp, "\tend else begin\n");
+			fprintf(fp, "\t\tcase(in_flip)\n");
+			for (j=0; j<(int)pow(2, num_input); j++) {
+				fprintf(fp, "\t\t\t%d'd%d: out = config_in[%d];\n", num_input, j, j);
+			}		
+			fprintf(fp, "\t\tendcase\n\tend\nend\n\n");					
+			fprintf(fp, "endmodule\n\n");*/
+		
+			
+			return 67;
+		}
+
+		//////////////////////////////////////////////////////
+		// Bottom of the tree: primitives
+		//	- LUT is recognized by having a mode called "wire"
+		//	- FF is recognized by having a blif_model ".latch"
+		//	- IO is recognized by having child with a blif_model ".input or .output"
+		//////////////////////////////////////////////////////
+		
+		for (i=0; i<pb_graph_node->pb_type->num_modes; i++) {
+			if (strcmp(pb_graph_node->pb_type->modes[i].name, "wire")==0) {
 			num_input = pb_graph_node->pb_type->num_input_pins;
 			
 			/*fprintf(fp, "/////////////////////////////////////////////////////\n");
@@ -257,14 +362,14 @@ int dump_pb_rec_verilog (const INP t_pb_graph_node *pb_graph_node, INP FILE *fp,
 			}
 			fprintf(fp, ",\n\tinout [%d:0]%s_ext", capacity-1, pb_graph_node->pb_type->name);	
 			fprintf(fp, ",\n\tinput [%d:0]config_in", capacity-1);	
-			fprintf(fp, ",\n\tinput config_reset");
+			fprintf(fp, ",\n\tinput config_rst");
 			fprintf(fp, "\n);\n\n");
 
 			pb_graph_pins = pb_graph_node->input_pins;
 			for (i = 0; i < pb_graph_node->num_input_ports; i++) {
 				port = pb_graph_pins[i][0].port;
 				for (j=0; j<capacity; j++) {
-					fprintf(fp, "assign %s_ext[%d] = config_reset?1'bz:(config_in[%d]?1'bz:%s[%d]);\n", \
+					fprintf(fp, "assign %s_ext[%d] = config_rst?1'bz:(config_in[%d]?1'bz:%s[%d]);\n", \
 						pb_graph_node->pb_type->name, j, j, port->name, j);	
 				}
 			}
@@ -273,7 +378,7 @@ int dump_pb_rec_verilog (const INP t_pb_graph_node *pb_graph_node, INP FILE *fp,
 			for (i = 0; i < pb_graph_node->num_output_ports; i++) {
 				port = pb_graph_pins[i][0].port;
 				for (j=0; j<capacity; j++) {
-					fprintf(fp, "assign %s[%d] = config_reset?1'bz:(config_in[%d]?%s_ext[%d]:1'bz);\n", \
+					fprintf(fp, "assign %s[%d] = config_rst?1'bz:(config_in[%d]?%s_ext[%d]:1'bz);\n", \
 						port->name, j, j, pb_graph_node->pb_type->name, j);	
 				}
 			}
@@ -316,22 +421,27 @@ int dump_pb_rec_verilog (const INP t_pb_graph_node *pb_graph_node, INP FILE *fp,
 	//////////////////////////////////////////////////////
 	n_config = 0;
 	i = 0;
+	int mux_size = 0;
 	//for (i = 0; i < pb_graph_node->pb_type->num_modes; i++) {
 	for (j = 0; j < pb_graph_node->pb_type->modes[i].num_pb_type_children; j++) {
-		for (k = 0;	k< pb_graph_node->pb_type->modes[i].pb_type_children[j].num_pb;	k++) {
-			for (l = 0; l < pb_graph_node->child_pb_graph_nodes[i][j][k].num_input_ports; l++) {
-				port = pb_graph_node->child_pb_graph_nodes[i][j][k].input_pins[l][0].port;		
-				for (int h = 0; h < port->num_pins; h++) {
-					if (pb_graph_node->child_pb_graph_nodes[i][j][k].input_pins[l][h].num_input_edges > 1) {
-						n_config +=(int)ceil(((double)log(pb_graph_node->child_pb_graph_nodes[i][j][k].input_pins[l][h].num_input_edges)/log(2)));
-					}
-				}
-			}
+		for (k = 0; k< pb_graph_node->pb_type->modes[i].pb_type_children[j].num_pb; k++) {
 			for (l = 0; l < pb_graph_node->child_pb_graph_nodes[i][j][k].num_clock_ports; l++) {
 				port = pb_graph_node->child_pb_graph_nodes[i][j][k].clock_pins[l][0].port;		
 				for (int h = 0; h < port->num_pins; h++) {
 					if (pb_graph_node->child_pb_graph_nodes[i][j][k].clock_pins[l][h].num_input_edges > 1) {
-						n_config +=(int)ceil(((double)log(pb_graph_node->child_pb_graph_nodes[i][j][k].clock_pins[l][h].num_input_edges)/log(2)));
+						mux_size = (int)ceil(((double)log(pb_graph_node->child_pb_graph_nodes[i][j][k].input_pins[l][h].num_input_edges)/log(2)));
+						if (mux_size > 3) mux_size+=2;
+						n_config += mux_size;
+					}
+				}
+			}
+			for (l = 0; l < pb_graph_node->child_pb_graph_nodes[i][j][k].num_input_ports; l++) {
+				port = pb_graph_node->child_pb_graph_nodes[i][j][k].input_pins[l][0].port;		
+				for (int h = 0; h < port->num_pins; h++) {
+					if (pb_graph_node->child_pb_graph_nodes[i][j][k].input_pins[l][h].num_input_edges > 1) {
+						mux_size = (int)ceil(((double)log(pb_graph_node->child_pb_graph_nodes[i][j][k].input_pins[l][h].num_input_edges+1)/log(2)));
+						if (mux_size > 3) mux_size+=2;
+						n_config += mux_size;
 					}
 				}
 			}
@@ -342,10 +452,14 @@ int dump_pb_rec_verilog (const INP t_pb_graph_node *pb_graph_node, INP FILE *fp,
 		port = pb_graph_node->output_pins[l][0].port;		
 		for (int h = 0; h < port->num_pins; h++) {
 			if (pb_graph_node->output_pins[l][h].num_input_edges > 1) {
-				n_config +=(int)ceil(((double)log(pb_graph_node->output_pins[l][h].num_input_edges)/log(2)));
+				mux_size = (int)ceil(((double)log(pb_graph_node->output_pins[l][h].num_input_edges)/log(2)));
+				if (mux_size > 3) mux_size+=2;
+				n_config += mux_size;
 			}
 		}
 	}
+
+	printf("%d?\n", n_config);
 	
 	//////////////////////////////////////////////////////
 	// Declare modules
@@ -372,7 +486,8 @@ int dump_pb_rec_verilog (const INP t_pb_graph_node *pb_graph_node, INP FILE *fp,
 		if (flag_first == 0) flag_first = 1;
 		else fprintf(fp, ",\n");
 		port = pb_graph_pins[i][0].port;
-		fprintf(fp, "\tinput [%d:0]%s", capacity*port->num_pins-1, port->name);
+		fprintf(fp, "\tinput [%d:0]%s,\n", capacity*port->num_pins-1, port->name);
+		fprintf(fp, "\tinput reset");
 	}
 	pb_graph_pins = pb_graph_node->output_pins;
 	for (i = 0; i < pb_graph_node->num_output_ports; i++) {
@@ -387,7 +502,7 @@ int dump_pb_rec_verilog (const INP t_pb_graph_node *pb_graph_node, INP FILE *fp,
 		if (flag_first == 0) flag_first = 1;
 		else fprintf(fp, ",\n");
 		fprintf(fp, "\tinput [%d:0]config_in,\n", (n_config+n_config_prev_total)-1);
-		fprintf(fp, "\tinput config_reset\n");
+		fprintf(fp, "\tinput config_rst\n");
 	}
 	fprintf(fp, "\n);\n\n");
 	
@@ -455,13 +570,14 @@ int dump_pb_rec_verilog (const INP t_pb_graph_node *pb_graph_node, INP FILE *fp,
 				pb_graph_node->child_pb_graph_nodes[i][j][k].pb_type->name, k);
 			pb_graph_pins = pb_graph_node->clock_pins;
 			for (l = 0;  l< pb_graph_node->child_pb_graph_nodes[i][j][k].num_clock_ports; l++) {
-				if (flag_first == 0) flag_first = 1;
+				if (flag_first == 0) {flag_first = 1;}
 				else fprintf(fp, ",");					
 				fprintf(fp, " .%s(%s_%s_%d)", 
 					pb_graph_node->child_pb_graph_nodes[i][j][k].clock_pins[l][0].port->name, 
 					pb_graph_node->child_pb_graph_nodes[i][j][k].clock_pins[l][0].port->name,
 					pb_graph_node->child_pb_graph_nodes[i][j][k].clock_pins[l][0].parent_node->pb_type->name,
 					pb_graph_node->child_pb_graph_nodes[i][j][k].clock_pins[l][0].parent_node->placement_index);
+				fprintf(fp, ", .reset(reset)");
 			}
 			for (l = 0;  l< pb_graph_node->child_pb_graph_nodes[i][j][k].num_input_ports; l++) {
 				if (flag_first == 0) {flag_first = 1;}
@@ -484,7 +600,7 @@ int dump_pb_rec_verilog (const INP t_pb_graph_node *pb_graph_node, INP FILE *fp,
 			//determine if configuration bits are needed
 			if (n_config_prev_per_child[i][j] != 0) { 
 				int num_pb = pb_graph_node->pb_type->modes[i].pb_type_children[j].num_pb;
-				fprintf(fp, ", .config_in(config_in[%d:%d]), .config_reset(config_reset) ); //block instantiation\n", \
+				fprintf(fp, ", .config_in(config_in[%d:%d]), .config_rst(config_rst) ); //block instantiation\n", \
 					n_config_used[0]+n_config_prev_per_child[i][j]/num_pb-1, n_config_used[0]);
 				n_config_used[0] += n_config_prev_per_child[i][j]/num_pb;
 			}
@@ -504,7 +620,7 @@ int dump_pb_rec_verilog (const INP t_pb_graph_node *pb_graph_node, INP FILE *fp,
 	
 	fprintf(fp, "endmodule\n\n\n");
 	
-	return n_config+n_config_prev_total;
+	return n_config_used[0];
 }
 
 void dump_pb_pins_verilog(INP t_pb_graph_pin **pb_graph_pins, INP int num_ports,
@@ -558,13 +674,15 @@ void dump_pb_pins_verilog(INP t_pb_graph_pin **pb_graph_pins, INP int num_ports,
 					if (fan_in > 1) {
 						if (port->type == OUT_PORT) {
 							mux_size = (int)ceil(((double)log(fan_in)/log(2))); //no need for GND for outputs
-							fprintf(fp, "}), .config_in(config_in[%d:%d]), .config_reset(config_reset), .out(%s[%d]) );\n",
+							if (mux_size > 3) mux_size = mux_size+2;
+							fprintf(fp, "}), .config_in(config_in[%d:%d]), .config_rst(config_rst), .out(%s[%d]) );\n",
 								mux_size+n_config_used[0]-1, n_config_used[0],
 								pb_graph_pins[i][j].port->name, j);
 							
 						} else { //GND signal for unused pins, needed for config calculations and etc.
 							mux_size = (int)ceil(((double)log(fan_in+1)/log(2))); //+1 because of GND
-							fprintf(fp, ", ground}), .config_in(config_in[%d:%d]), .config_reset(config_reset), .out(%s_%s_%d[%d]) );\n", 
+							if (mux_size > 3) mux_size = mux_size+2;
+							fprintf(fp, ", ground}), .config_in(config_in[%d:%d]), .config_rst(config_rst), .out(%s_%s_%d[%d]) );\n", 
 								mux_size+n_config_used[0]-1, n_config_used[0],
 								pb_graph_pins[i][j].port->name,
 								pb_graph_pins[i][j].parent_node->pb_type->name,
@@ -604,6 +722,7 @@ void dump_rr_graph_as_verilog (INP const char *file_name, int* type_config_bits,
 	FILE *fp_config;
 	FILE *fp_sdc;
 	FILE *fp_floorplan;
+	FILE *fp_config_helper;
 	
 	int inode, iconn, icap;
 	
@@ -619,9 +738,10 @@ void dump_rr_graph_as_verilog (INP const char *file_name, int* type_config_bits,
 	t_pb_graph_node *pb_graph_node = NULL;
 	
 	fp = my_fopen(file_name, "w", 0);
-	fp_config = my_fopen("bitgen_report.txt", "w", 0);
-	fp_sdc = my_fopen("fpga_top.sdc", "w", 0);
-	fp_floorplan = my_fopen("floorplan.txt", "w", 0);
+	fp_config = my_fopen("FPGA/bitgen_report.txt", "w", 0);
+	fp_config_helper = my_fopen("FPGA/fpga_config.txt", "w", 0);
+	fp_sdc = my_fopen("FPGA/fpga_top.sdc", "w", 0);
+	fp_floorplan = my_fopen("FPGA/floorplan.txt", "w", 0);
 	
 	int i, j, k, l, m;
 	
@@ -847,9 +967,10 @@ void dump_rr_graph_as_verilog (INP const char *file_name, int* type_config_bits,
 	// create top module and top level inputs and outputs
 	//	io has special handling: inout ports to be configred
 	/////////////////////////////////////////////////////////////////////
-	fprintf(fp, "`include \"define.vh\"\n\n");
+	fprintf(fp, "`include \"FPGA/define.v\"\n\n");
 	fprintf(fp, "module fpga_top (\n");
 	fprintf(fp, "\tinput fpga_clk,\n");
+	fprintf(fp, "\tinput fpga_rst,\n");
 	for (i=0; i<nx+2; i++) {
 		for (j=0; j<ny+2; j++) {
 			t_name = grid[i][j].type->name;
@@ -859,13 +980,11 @@ void dump_rr_graph_as_verilog (INP const char *file_name, int* type_config_bits,
 			}
 		}
 	}
-	fprintf(fp, "\tinput config_reset,\n");
+	fprintf(fp, "\tinput config_rst,\n");
 	fprintf(fp, "\tinput config_clk,\n");
-	fprintf(fp, "\tinput config_in,\n");
-	fprintf(fp, "\tinput config_mode\n");
-	//fprintf(fp, "\toutput config_out\n");
+	fprintf(fp, "\tinput config_in\n");
 	fprintf(fp, ");\n\n");
-	printf("creating nodes\n");	
+
 	/////////////////////////////////////////////////////////////////////	
 	// create each node as wires
 	/////////////////////////////////////////////////////////////////////
@@ -912,7 +1031,6 @@ void dump_rr_graph_as_verilog (INP const char *file_name, int* type_config_bits,
 	int buff_num = 0; 
 
 	for (inode = 0; inode < num_rr_nodes; inode++) {
-		//if (inode == 25) return;
 		//else printf("---------\nnode %d\n", inode);
 		rr_type = rr_node[inode].type;
 		mux_size = rr_node[inode].fan_in;
@@ -1000,21 +1118,21 @@ void dump_rr_graph_as_verilog (INP const char *file_name, int* type_config_bits,
 			//set configuration bits and record it to fp_config
 			//config_set(num_bits, value, config_array, config_array_size, file)
 			pre_config_array_size = config_array_size;
-			if (config_value == -1) config_set((int)ceil((double)log(mux_size)/log(2)), 0, &config_array, &config_array_size, fp_config);
-			else config_set((int)ceil((double)log(mux_size)/log(2)), config_value, &config_array, &config_array_size, fp_config);
+			//if (config_value == -1) config_set((int)ceil((double)log(mux_size)/log(2)), 0, &config_array, &config_array_size, fp_config);
+			config_set((int)ceil((double)log(mux_size)/log(2)), config_value, &config_array, &config_array_size, fp_config);
 			
 			if (config_value == -1) fprintf(fp_config, "[%d:%d] (mux_%d) %d unused\n", config_array_size-1, pre_config_array_size, imux, config_value);
 			else fprintf(fp_config, "[%d:%d] (mux_%d) %d\n", config_array_size-1, pre_config_array_size, imux, config_value);
-			//fprintf(fp, "}), .out(n%d), .config_in(config_chain[%d:%d]), .config_reset(config_reset)); \n", inode, config_array_size-1, pre_config_array_size);
-			//if (long_short[inode]==0)fprintf(fp, "}), .out(n%d_long), .config_in(config_chain[%d:%d]), .config_reset(config_reset)); \n", inode, config_array_size-1, pre_config_array_size);
+			//fprintf(fp, "}), .out(n%d), .config_in(config_chain[%d:%d]), .config_rst(config_rst)); \n", inode, config_array_size-1, pre_config_array_size);
+			//if (long_short[inode]==0)fprintf(fp, "}), .out(n%d_long), .config_in(config_chain[%d:%d]), .config_rst(config_rst)); \n", inode, config_array_size-1, pre_config_array_size);
 			//if (direction_name[rr_node[inode].direction+1]==direction_name[1]){
-			//	fprintf(fp, "}), .out(n%d), .config_in(config_chain[%d:%d]), .config_reset(config_reset)); \n", inode, config_array_size-1, pre_config_array_size);
+			//	fprintf(fp, "}), .out(n%d), .config_in(config_chain[%d:%d]), .config_rst(config_rst)); \n", inode, config_array_size-1, pre_config_array_size);
 			//	fprintf(fp, "buffer_wire buffer_%d (.in(n%d), .out(n%d_%d));\n", inode, inode, inode, 0);
 			//} else if (node_len[inode]>buffer_freq){
-			//	fprintf(fp, "}), .out(n%d), .config_in(config_chain[%d:%d]), .config_reset(config_reset)); \n", inode, config_array_size-1, pre_config_array_size);
+			//	fprintf(fp, "}), .out(n%d), .config_in(config_chain[%d:%d]), .config_rst(config_rst)); \n", inode, config_array_size-1, pre_config_array_size);
 			//	fprintf(fp, "buffer_wire buffer_%d (.in(n%d), .out(n%d_%d));\n", inode, inode, inode, (int)ceil((double)node_len[inode]/buffer_freq)-1);
 			//} else {
-			fprintf(fp, "}), .out(n%d), .config_in(config_chain[%d:%d]), .config_reset(config_reset)); \n", inode, config_array_size-1, pre_config_array_size);
+			fprintf(fp, "}), .out(n%d), .config_in(config_chain[%d:%d]), .config_rst(config_rst)); \n", inode, config_array_size-1, pre_config_array_size);
 			if (name_type[rr_type] != name_type[2] && name_type[rr_type] != name_type[3]) 
 				fprintf(fp, "buffer_wire buffer_%d (.in(n%d), .out(n%d_0));\n", inode, inode, inode);
 			
@@ -1160,6 +1278,7 @@ void dump_rr_graph_as_verilog (INP const char *file_name, int* type_config_bits,
 				for (; k>=0; k--) {
 					port = pb_graph_node->clock_pins[k][0].port;
 					fprintf(fp, ".%s(%s_%d_%d)", port->name, port->name, i, j);
+					if (k==0) fprintf(fp, ", .reset(fpga_rst)");
 					if (k!=-1 || l!=-1 || m!=-1 || config_size !=0) fprintf(fp, ", ");
 				}
 			} else k = -1;
@@ -1176,15 +1295,16 @@ void dump_rr_graph_as_verilog (INP const char *file_name, int* type_config_bits,
 			
 			if (grid[i][j].type == IO_TYPE) {
 				fprintf(fp, ".%s_ext(%s_%d_%d_wire), ", t_name, t_name, i, j);
-				fprintf(fp, ".config_in(config_chain[%d:%d]), .config_reset(config_reset) );\n\n", \
+				fprintf(fp, ".config_in(config_chain[%d:%d]), .config_rst(config_rst) );\n\n", \
 					config_array_size-1, pre_config_array_size);
 			} else if (config_size !=0) {
-				fprintf(fp, ".config_in(config_chain[%d:%d]), .config_reset(config_reset) );\n\n",\
+				fprintf(fp, ".config_in(config_chain[%d:%d]), .config_rst(config_rst) );\n\n",\
 					config_array_size-1, pre_config_array_size);
 			} else fprintf(fp, " );\n\n");
 
-			if ((config_array_size - pre_config_array_size) != config_size) flag_bitstream_diff++;
-			
+			if ((config_array_size - pre_config_array_size) != config_size) {
+				flag_bitstream_diff++;
+			}
 			if (grid[i][j].type != IO_TYPE) {
 				for (k=0; k<pb_graph_node->num_clock_ports; k++) {
 					for (l=0; l<pb_graph_node->num_clock_pins[k]; l++) {
@@ -1272,9 +1392,6 @@ void dump_rr_graph_as_verilog (INP const char *file_name, int* type_config_bits,
 
 
 	fprintf(fp, "endmodule\n\n");
-	
-	FILE *fp_config_helper;
-	fp_config_helper = my_fopen("fpga_config.v", "w", 0);
 	
 	fprintf(fp_config_helper, "module config_helper(\n");
 	fprintf(fp_config_helper, "\tinput clk,\n");

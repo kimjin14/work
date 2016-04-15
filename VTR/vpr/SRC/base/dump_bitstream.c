@@ -15,12 +15,15 @@ void config_set(int bits_req, int value, char** config_array, int* config_array_
 	int curr_bit_used = *config_array_size%8;
 	int i;
 	char c;
+
+	if (bits_req > 3) bits_req+=2;
 		
 	//first time configuring, use malloc
 	if (*config_array_size == 0) {	
 		*config_array_size += bits_req;
 		*config_array = (char*)malloc((*config_array_size/8)*sizeof(char));
 	} 
+
 	//case where you have bits unused and require less than that
 	//if curr_bit_used != 0, there are some unused bits
 	//if (8bits - curr_bit_used) > bits_req), there are enough unused bits
@@ -30,19 +33,33 @@ void config_set(int bits_req, int value, char** config_array, int* config_array_
 		*config_array_size += bits_req;
 		*config_array = (char*)realloc(*config_array, (int)ceil((double)(*config_array_size)/8)*sizeof(char));
 	}
-	
+
+	int j = 0;
 	//for each bit, set the values
 	for (i=0; i<bits_req; i++) {	
-			
-		//if there are space, keep filling it up from [0:7]
+
 		if (curr_bit_used<8) curr_bit_used++;
 		else { //all filled up, set count back to 0 and go to the next array
 			curr_bit_used = 0;
 			curr_iarray++;
 		}
+
+		//if there are space, keep filling it up from [0:7]
 		c = (*config_array)[curr_iarray];
-		c = (c << 1) & 254;
-		c += value>>(i)&1;
+		c = (c << 1)&254;
+		
+		//special case: where partially decoded MUX16 is used
+		//last 2 bits should turn into 4 bits (value&3 is last 2 bits)
+		//however, if not part of MUX16, use regular encoding
+		//if (bits_req > 3 && i<4 && value>(8)) {
+		if (bits_req > 3 && i<4) {
+			if ((value&3)==j&&value!=-1) c += 1&1;
+			else c += 0&1;
+			j++;		
+		} else {
+			c += value>>(i-(int)((double)j/2))&1;
+		}	
+		fprintf(fp, "\t%d %d\n", c&1, value&3);
 		(*config_array)[curr_iarray] = c;
 	}
 	assert(curr_iarray < ((int)ceil((double)(*config_array_size)/8)));
@@ -563,10 +580,11 @@ void config_set_pins(t_pb_graph_pin **pb_graph_pins, int num_ports, \
 			
 			//similar to architecture pin connection
 			//if fan_in > 1, mux needs to be instantiated
-			if (fan_in>1) {	
-				if (rr_graph_of_cluster[pb_graph_pins[i][j].pin_count_in_cluster].net_num == OPEN) {
-					config_val = 0;	
-				} else {
+			if (fan_in>1) {
+				config_val = 0;	
+				if (rr_graph_of_cluster[pb_graph_pins[i][j].pin_count_in_cluster].net_num != OPEN) {
+				//	config_val = 0;	
+			//	} else {
 					pin_count_in_cluster = pb_graph_pins[i][j].pin_count_in_cluster;					
 					net_num = rr_graph_of_cluster[pin_count_in_cluster].net_num;
 						
@@ -620,7 +638,7 @@ void config_set_pins(t_pb_graph_pin **pb_graph_pins, int num_ports, \
 					for (k=0; k<fan_in+1; k++) {
 						if (config_val!=k) {
 							fprintf(fp_sdc, "set_disable_timing mux_%d/in[%d]\n", \
-								j*6+115*pb_graph_pins[i][0].parent_node->placement_index, k);	
+								j*(mux_size+2*(mux_size>3))+((67+(mux_size+2*(mux_size>3))*8)*pb_graph_pins[i][0].parent_node->placement_index), k);	
 						
 						}
 					}
