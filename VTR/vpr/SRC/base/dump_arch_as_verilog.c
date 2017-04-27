@@ -254,8 +254,8 @@ void dump_mux_as_verilog (INP const char *file_name, int* mux_max_size) {
 		//////////////////////////////////////////////////////
 		if (strcmp(pb_graph_node->pb_type->name, "fle")==0) {
 			assert(pb_graph_node->pb_type->num_modes>1);
-
-			/*fprintf(fp, "/////////////////////////////////////////////////////\n");
+			/*
+			fprintf(fp, "/////////////////////////////////////////////////////\n");
 			fprintf(fp, "/////////////////////// fle /////////////////////////\n");
 			fprintf(fp, "/////////////////////////////////////////////////////\n");
 			fprintf(fp, "module fle (\n");
@@ -296,9 +296,9 @@ void dump_mux_as_verilog (INP const char *file_name, int* mux_max_size) {
 				fprintf(fp, "\t\t\t%d'd%d: out = config_in[%d];\n", num_input, j, j);
 			}		
 			fprintf(fp, "\t\tendcase\n\tend\nend\n\n");					
-			fprintf(fp, "endmodule\n\n");*/
+			fprintf(fp, "endmodule\n\n");
 		
-			
+			*/	
 			return 67;
 		}
 
