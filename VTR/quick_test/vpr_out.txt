@@ -1,0 +1,1385 @@
+
+VPR FPGA Placement and Routing.
+Version: Version 7.0
+Compiled: Aug  7 2014.
+University of Toronto
+vpr@eecg.utoronto.ca
+This is free open source code under MIT license.
+
+Architecture file: sample_arch.xml
+Circuit name: vpr_test.blif
+
+Building complex block graph.
+WARNING(1): io[0].clock[0] unconnected pin in architecture.
+WARNING(2): memory[0].addr1[14] unconnected pin in architecture.
+WARNING(3): memory[0].addr1[15] unconnected pin in architecture.
+WARNING(4): memory[0].addr1[16] unconnected pin in architecture.
+WARNING(5): memory[0].addr2[14] unconnected pin in architecture.
+WARNING(6): memory[0].addr2[15] unconnected pin in architecture.
+WARNING(7): memory[0].addr2[16] unconnected pin in architecture.
+Loop for doall = 0, init_parse took 0 seconds.
+Loop for doall = 0 took 0 seconds.
+Loop for doall = 1, init_parse took 0.02 seconds.
+Loop for doall = 1 took 0.01 seconds.
+Swept away 0 nets with no fanout.
+0 unconnected blocks in input netlist.
+Removed 2 LUT buffers.
+Sweeped away 2 nodes.
+BLIF circuit stats:
+	0 LUTs of size 0
+	0 LUTs of size 1
+	7 LUTs of size 2
+	16 LUTs of size 3
+	21 LUTs of size 4
+	0 LUTs of size 5
+	0 LUTs of size 6
+	41 of type input
+	21 of type output
+	0 of type latch
+	44 of type names
+	0 of type dual_port_ram
+	0 of type single_port_ram
+	0 of type multiply
+Timing analysis: ON
+Circuit netlist file: vpr_test.net
+Circuit placement file: vpr_test.place
+Circuit routing file: route.out
+Circuit SDC file: vpr_test.sdc
+Operation: RUN_FLOW
+
+Packer: ENABLED
+Placer: ENABLED
+Router: ENABLED
+PackerOpts.allow_early_exit: FALSE
+PackerOpts.allow_unrelated_clustering: TRUE
+PackerOpts.alpha_clustering: 0.750000
+PackerOpts.aspect: 1.000000
+PackerOpts.beta_clustering: 0.900000
+PackerOpts.block_delay: 0.000000
+PackerOpts.cluster_seed_type: TIMING
+PackerOpts.connection_driven: TRUE
+PackerOpts.global_clocks: TRUE
+PackerOpts.hill_climbing_flag: FALSE
+PackerOpts.inter_cluster_net_delay: 1.000000
+PackerOpts.intra_cluster_net_delay: 0.000000
+PackerOpts.recompute_timing_after: 32767
+PackerOpts.sweep_hanging_nets_and_inputs: TRUE
+PackerOpts.timing_driven: TRUE
+
+PlacerOpts.place_freq: PLACE_ONCE
+PlacerOpts.place_algorithm: PATH_TIMING_DRIVEN_PLACE
+PlacerOpts.pad_loc_type: FREE
+PlacerOpts.place_cost_exp: 1.000000
+PlacerOpts.inner_loop_recompute_divider: 0
+PlacerOpts.recompute_crit_iter: 1
+PlacerOpts.timing_tradeoff: 0.500000
+PlacerOpts.td_place_exp_first: 1.000000
+PlacerOpts.td_place_exp_last: 8.000000
+PlaceOpts.seed: 1
+AnnealSched.type: AUTO_SCHED
+AnnealSched.inner_num: 1.000000
+
+RouterOpts.route_type: DETAILED
+RouterOpts.router_algorithm: TIMING_DRIVEN
+RouterOpts.base_cost_type: DELAY_NORMALIZED
+RouterOpts.fixed_channel_width: NO_FIXED_CHANNEL_WIDTH
+RouterOpts.acc_fac: 1.000000
+RouterOpts.bb_factor: 3
+RouterOpts.bend_cost: 0.000000
+RouterOpts.first_iter_pres_fac: 0.500000
+RouterOpts.initial_pres_fac: 0.500000
+RouterOpts.pres_fac_mult: 1.300000
+RouterOpts.max_router_iterations: 50
+RouterOpts.astar_fac: 1.200000
+RouterOpts.criticality_exp: 1.000000
+RouterOpts.max_criticality: 0.990000
+
+RoutingArch.directionality: UNI_DIRECTIONAL
+RoutingArch.switch_block_type: WILTON
+RoutingArch.Fs: 3
+
+Initialize packing.
+Begin packing 'vpr_test.blif'.
+
+After removing unused inputs...
+	total blocks: 106, total nets: 85, total inputs: 41, total outputs: 21
+Begin prepacking.
+Finish prepacking.
+Using inter-cluster delay: 8.3684e-10
+
+SDC file 'vpr_test.sdc' blank or not found.
+
+Defaulting to: constrain all 0 inputs and 0 outputs on a virtual external clock.
+Optimize this virtual clock to run as fast as possible.
+Not enough resources expand FPGA size to x = 2 y = 2.
+Complex block 0: cb.out:z0, type: io
+	
+Passed route at end.
+Complex block 1: cb.z0, type: clb
+	.........
+Passed route at end.
+Complex block 2: cb.out:p0, type: io
+	
+Passed route at end.
+Complex block 3: cb.[48], type: clb
+	.........
+Passed route at end.
+Complex block 4: cb.out:c1, type: io
+	
+Passed route at end.
+Complex block 5: cb.out:d1, type: io
+	
+Passed route at end.
+Complex block 6: cb.out:w0, type: io
+	
+Passed route at end.
+Not enough resources expand FPGA size to x = 3 y = 3.
+Complex block 7: cb.w0, type: clb
+	.........
+Passed route at end.
+Complex block 8: cb.n0, type: io
+	
+Passed route at end.
+Complex block 9: cb.o0, type: io
+	
+Passed route at end.
+Complex block 10: cb.b0, type: io
+	
+Passed route at end.
+Complex block 11: cb.j0, type: io
+	
+Passed route at end.
+Complex block 12: cb.c0, type: io
+	
+Passed route at end.
+Complex block 13: cb.k0, type: io
+	
+Passed route at end.
+Complex block 14: cb.e, type: io
+	
+Passed route at end.
+Complex block 15: cb.n, type: io
+	
+Passed route at end.
+Complex block 16: cb.h0, type: io
+	
+Passed route at end.
+Complex block 17: cb.g0, type: io
+	
+Passed route at end.
+Complex block 18: cb.f0, type: io
+	
+Passed route at end.
+Complex block 19: cb.f, type: io
+	
+Passed route at end.
+Complex block 20: cb.e0, type: io
+	
+Passed route at end.
+Complex block 21: cb.r, type: io
+	
+Passed route at end.
+Complex block 22: cb.m0, type: io
+	
+Passed route at end.
+Complex block 23: cb.l0, type: io
+	
+Passed route at end.
+Complex block 24: cb.a, type: io
+	
+Passed route at end.
+Complex block 25: cb.z, type: io
+	
+Passed route at end.
+Complex block 26: cb.h, type: io
+	
+Passed route at end.
+Complex block 27: cb.p, type: io
+	
+Passed route at end.
+Complex block 28: cb.out:h1, type: io
+	
+Passed route at end.
+Complex block 29: cb.out:i1, type: io
+	
+Passed route at end.
+Complex block 30: cb.out:a1, type: io
+	
+Passed route at end.
+Complex block 31: cb.out:j1, type: io
+	
+Passed route at end.
+Complex block 32: cb.out:b1, type: io
+	
+Passed route at end.
+Complex block 33: cb.j1, type: clb
+	.........
+Passed route at end.
+Complex block 34: cb.i, type: io
+	
+Passed route at end.
+Complex block 35: cb.out:r0, type: io
+	
+Passed route at end.
+Complex block 36: cb.d0, type: io
+	
+Passed route at end.
+Complex block 37: cb.out:s0, type: io
+	
+Passed route at end.
+Complex block 38: cb.out:q0, type: io
+	
+Passed route at end.
+Complex block 39: cb.out:t0, type: io
+	
+Passed route at end.
+Complex block 40: cb.j, type: io
+	
+Passed route at end.
+Complex block 41: cb.u, type: io
+	
+Passed route at end.
+Complex block 42: cb.t, type: io
+	
+Passed route at end.
+Complex block 43: cb.s, type: io
+	
+Passed route at end.
+Complex block 44: cb.o, type: io
+	
+Passed route at end.
+Complex block 45: cb.g, type: io
+	
+Passed route at end.
+Complex block 46: cb.c, type: io
+	
+Passed route at end.
+Complex block 47: cb.k, type: io
+	
+Passed route at end.
+Complex block 48: cb.out:g1, type: io
+	
+Passed route at end.
+Complex block 49: cb.out:e1, type: io
+	
+Passed route at end.
+Complex block 50: cb.out:y0, type: io
+	
+Passed route at end.
+Complex block 51: cb.g1, type: clb
+	...
+Passed route at end.
+Complex block 52: cb.out:f1, type: io
+	
+Passed route at end.
+Complex block 53: cb.out:v0, type: io
+	
+Passed route at end.
+Complex block 54: cb.out:u0, type: io
+	
+Passed route at end.
+Complex block 55: cb.out:x0, type: io
+	
+Passed route at end.
+Complex block 56: cb.w, type: io
+	
+Passed route at end.
+Complex block 57: cb.v, type: io
+	
+Passed route at end.
+Complex block 58: cb.a0, type: io
+	
+Passed route at end.
+Complex block 59: cb.x, type: io
+	
+Passed route at end.
+Complex block 60: cb.i0, type: io
+	
+Passed route at end.
+Complex block 61: cb.b, type: io
+	
+Passed route at end.
+Complex block 62: cb.m, type: io
+	
+Passed route at end.
+Complex block 63: cb.l, type: io
+	
+Passed route at end.
+Complex block 64: cb.y, type: io
+	
+Passed route at end.
+Complex block 65: cb.q, type: io
+	
+Passed route at end.
+Complex block 66: cb.d, type: io
+	
+Passed route at end.
+	<EMPTY>: # blocks: 0, average # input + clock pins used: 0, average # output pins used: 0
+	io: # blocks: 62, average # input + clock pins used: 0.33871, average # output pins used: 0.66129
+	clb: # blocks: 5, average # input + clock pins used: 14.6, average # output pins used: 4.8
+	mult_36: # blocks: 0, average # input + clock pins used: 0, average # output pins used: 0
+	memory: # blocks: 0, average # input + clock pins used: 0, average # output pins used: 0
+Absorbed logical nets 20 out of 85 nets, 65 nets not absorbed.
+
+Netlist conversion complete.
+
+Packing took 0.08 seconds.
+Packing completed.
+Begin parsing packed FPGA netlist file.
+Finished parsing packed FPGA netlist file.
+Netlist generated from file 'vpr_test.net'.
+
+Netlist num_nets: 65
+Netlist num_blocks: 67
+Netlist <EMPTY> blocks: 0.
+Netlist clb blocks: 5.
+Netlist mult_36 blocks: 0.
+Netlist memory blocks: 0.
+Netlist inputs pins: 41
+Netlist output pins: 21
+
+Auto-sizing FPGA at x = 8 y = 8
+Auto-sizing FPGA at x = 4 y = 4
+Auto-sizing FPGA at x = 2 y = 2
+Auto-sizing FPGA at x = 3 y = 3
+Auto-sizing FPGA at x = 2 y = 2
+FPGA auto-sized to x = 3 y = 3
+The circuit will be mapped into a 3 x 3 array of clbs.
+
+Resource usage...
+	Netlist      0	blocks of type: <EMPTY>
+	Architecture 7	blocks of type: <EMPTY>
+	Netlist      62	blocks of type: io
+	Architecture 96	blocks of type: io
+	Netlist      5	blocks of type: clb
+	Architecture 6	blocks of type: clb
+	Netlist      0	blocks of type: mult_36
+	Architecture 0	blocks of type: mult_36
+	Netlist      0	blocks of type: memory
+	Architecture 0	blocks of type: memory
+
+Computing delta_io_to_io lookup matrix, may take a few seconds, please wait...
+Computing delta_io_to_clb lookup matrix, may take a few seconds, please wait...
+Computing delta_clb_to_io lookup matrix, may take a few seconds, please wait...
+Computing delta_clb_to_clb lookup matrix, may take a few seconds, please wait...
+
+There are 94 point to point connections in this circuit.
+
+Initial placement cost: 1.01272 bb_cost: 2.92863 td_cost: 1.36787e-08 delay_cost: 1.89821e-08
+
+--------- --------- ----------- ----------- ----------- ----------- -------- -------- ------- ------- ------- --------- -------
+        T      Cost  Av BB Cost  Av TD Cost  Av Tot Del  P to P Del    d_max  Ac Rate Std Dev R limit     Exp Tot Moves   Alpha
+--------- --------- ----------- ----------- ----------- ----------- -------- -------- ------- ------- ------- --------- -------
+  0.17167   0.98523     2.90954 1.51193e-08 1.86539e-08 2.01937e-10   1.5777   0.9890  0.0259  4.0000  1.0000       272  0.5000
+  0.08583    1.0021     2.86073 1.49947e-08 1.86576e-08   1.983e-10   1.5777   0.9706  0.0197  4.0000  1.0000       544  0.5000
+  0.04292    1.0406     2.88128 1.51177e-08 1.88147e-08 1.93209e-10   1.5777   0.9596  0.0203  4.0000  1.0000       816  0.9000
+  0.03862   0.98734     2.85342 1.50225e-08  1.8531e-08 2.00482e-10   1.5777   0.9301  0.0164  4.0000  1.0000      1088  0.9000
+  0.03476    1.0074     2.83263 1.48831e-08 1.85389e-08 1.96845e-10   1.5777   0.9375  0.0118  4.0000  1.0000      1360  0.9000
+  0.03129    1.0127       2.875 1.47544e-08 1.85977e-08 1.97573e-10   1.5777   0.9522  0.0135  4.0000  1.0000      1632  0.9000
+  0.02816   0.98938     2.83805 1.52047e-08  1.8727e-08 2.03391e-10   1.5777   0.9265  0.0123  4.0000  1.0000      1904  0.9000
+  0.02534   0.97551     2.80964 1.51612e-08 1.86885e-08 2.01209e-10   1.5777   0.9412  0.0214  4.0000  1.0000      2176  0.9000
+  0.02281   0.97303     2.83067  1.5139e-08  1.8647e-08 2.02664e-10   1.5777   0.9301  0.0151  4.0000  1.0000      2448  0.9000
+  0.02053   0.97296     2.75461 1.50818e-08 1.85211e-08 2.01937e-10   1.5777   0.8860  0.0150  4.0000  1.0000      2720  0.9000
+  0.01847     1.034     2.79356 1.47281e-08 1.83912e-08 1.91754e-10   1.5777   0.8824  0.0208  4.0000  1.0000      2992  0.9000
+  0.01663   0.98095     2.72864 1.46557e-08 1.82574e-08 1.97573e-10   1.5777   0.8787  0.0210  4.0000  1.0000      3264  0.9000
+  0.01496   0.98479     2.76895 1.45794e-08 1.82163e-08 1.93936e-10   1.5777   0.8787  0.0315  4.0000  1.0000      3536  0.9000
+  0.01347    1.0003     2.74128 1.48005e-08 1.84274e-08 1.96118e-10   1.5777   0.8456  0.0102  4.0000  1.0000      3808  0.9000
+  0.01212    1.0024     2.81744 1.47646e-08  1.8389e-08 1.96118e-10   1.5777   0.8566  0.0165  4.0000  1.0000      4080  0.9000
+  0.01091   0.99357     2.80707 1.45645e-08 1.82518e-08 1.94663e-10   1.5777   0.8051  0.0167  4.0000  1.0000      4352  0.9000
+  0.00982    1.0016     2.63077 1.45103e-08 1.82478e-08 1.90299e-10   1.5777   0.7500  0.0132  4.0000  1.0000      4624  0.9500
+  0.00933    1.0178     2.71093 1.47939e-08 1.84885e-08 1.94663e-10   1.5777   0.7904  0.0173  4.0000  1.0000      4896  0.9500
+  0.00886    1.0096     2.68977 1.47269e-08 1.83922e-08 1.96118e-10   1.5777   0.7684  0.0135  4.0000  1.0000      5168  0.9500
+  0.00842   0.96691     2.69664 1.45361e-08 1.81332e-08 1.96118e-10   1.5777   0.7610  0.0132  4.0000  1.0000      5440  0.9500
+  0.00800   0.98455     2.70122 1.45347e-08 1.80756e-08 1.94663e-10   1.5777   0.7537  0.0148  4.0000  1.0000      5712  0.9500
+  0.00760   0.99796     2.72205 1.46455e-08 1.83158e-08 1.93936e-10   1.5777   0.7794  0.0139  4.0000  1.0000      5984  0.9500
+  0.00722   0.99906       2.704 1.47972e-08 1.83559e-08 1.96845e-10   1.5777   0.7463  0.0128  4.0000  1.0000      6256  0.9500
+  0.00686   0.99628     2.67224 1.44034e-08 1.80524e-08 1.91027e-10   1.5777   0.7022  0.0247  4.0000  1.0000      6528  0.9500
+  0.00651    1.0127     2.63482 1.42921e-08 1.79145e-08 1.90299e-10   1.5777   0.6765  0.0123  4.0000  1.0000      6800  0.9500
+  0.00619   0.99474     2.61254 1.45268e-08 1.82102e-08 1.93209e-10   1.5777   0.6728  0.0109  4.0000  1.0000      7072  0.9500
+  0.00588   0.98374     2.59603 1.45982e-08 1.81954e-08 1.99755e-10   1.5777   0.6912  0.0326  4.0000  1.0000      7344  0.9500
+  0.00558    1.0351     2.53799 1.40771e-08 1.78355e-08 1.88845e-10   1.5777   0.6213  0.0173  4.0000  1.0000      7616  0.9500
+  0.00531   0.98581     2.62096 1.44186e-08 1.81679e-08 1.89572e-10   1.5777   0.6838  0.0111  4.0000  1.0000      7888  0.9500
+  0.00504   0.96081      2.5214 1.44427e-08 1.80315e-08 1.96118e-10   1.5777   0.6103  0.0226  4.0000  1.0000      8160  0.9500
+  0.00479    1.0394     2.64707 1.43401e-08 1.80693e-08 1.90299e-10   1.5777   0.6507  0.0231  4.0000  1.0000      8432  0.9500
+  0.00455   0.98441     2.50342 1.39578e-08 1.77314e-08 1.86663e-10   1.5777   0.5772  0.0148  4.0000  1.0000      8704  0.9500
+  0.00432    1.0152     2.53241 1.38027e-08 1.75499e-08 1.85935e-10   1.5777   0.5588  0.0088  4.0000  1.0000      8976  0.9500
+  0.00411   0.96873     2.44327 1.38651e-08 1.73804e-08 1.90299e-10   1.5777   0.5184  0.0092  4.0000  1.0000      9248  0.9500
+  0.00390    1.0042     2.42057 1.36933e-08 1.72758e-08 1.85935e-10   1.5777   0.5000  0.0105  4.0000  1.0000      9520  0.9500
+  0.00370    1.0092     2.32578    1.34e-08 1.71082e-08 1.79389e-10   1.5777   0.3787  0.0136  4.0000  1.0000      9792  0.9500
+  0.00352    1.0052     2.40797 1.21681e-08 1.71313e-08 1.83026e-10   1.5777   0.5257  0.0202  3.7547  1.5724     10064  0.9500
+  0.00334   0.98278     2.42049  1.3896e-08 1.73684e-08 1.89572e-10   1.5777   0.4890  0.0100  4.0000  1.0000     10336  0.9500
+  0.00318   0.99583      2.4448 1.37902e-08 1.73234e-08 1.84481e-10   1.5777   0.4669  0.0120  4.0000  1.0000     10608  0.9500
+  0.00302   0.99259     2.38275 1.35558e-08 1.71618e-08 1.81571e-10   1.5777   0.4779  0.0111  4.0000  1.0000     10880  0.9500
+  0.00287   0.99262     2.35293 1.33769e-08  1.7054e-08 1.80117e-10   1.5777   0.4228  0.0109  4.0000  1.0000     11152  0.9500
+  0.00272    1.0023     2.29163 1.31742e-08 1.71702e-08 1.81571e-10   1.5777   0.4559  0.0079  3.9312  1.1606     11424  0.9500
+  0.00259   0.97275     2.24209 1.32283e-08 1.68935e-08 1.81571e-10   1.5777   0.4228  0.0151  3.9936  1.0149     11696  0.9500
+  0.00246    1.0122     2.18543  1.2625e-08 1.68412e-08 1.77207e-10   1.5777   0.3051  0.0040  3.9249  1.1752     11968  0.9500
+  0.00233   0.98746      2.1687 1.07993e-08 1.67643e-08 1.82299e-10   1.5093   0.2941  0.0065  3.3956  2.4102     12240  0.9500
+  0.00222   0.99934     2.16733  8.3264e-09  1.6592e-08  1.7648e-10   1.5777   0.4338  0.0095  2.9003  3.5661     12512  0.9500
+  0.00211   0.97606     2.08941 9.28669e-09 1.66664e-08 1.78662e-10   1.5093   0.3934  0.0131  2.8823  3.6079     12784  0.9500
+  0.00200    1.0015     2.06492 7.27992e-09 1.65189e-08 1.77207e-10   1.5777   0.4154  0.0054  2.7480  3.9214     13056  0.9500
+  0.00190    1.0006     2.12734 7.03683e-09 1.65464e-08 1.75025e-10   1.5777   0.3235  0.0100  2.6805  4.0789     13328  0.9500
+  0.00181   0.99933      2.1757 6.38617e-09 1.66112e-08 1.75752e-10   1.5777   0.3419  0.0107  2.3683  4.8073     13600  0.9500
+  0.00172   0.97809     2.10602 5.98951e-09 1.61408e-08 1.75025e-10   1.5777   0.3235  0.0177  2.1360  5.3494     13872  0.9500
+  0.00163    0.9921     2.00532 8.17357e-09 1.62199e-08 1.72116e-10   1.4409   0.4228  0.0074  1.8872  5.9298     14144  0.9500
+  0.00155   0.99803     2.03443 6.36748e-09 1.61008e-08 1.72843e-10   1.5093   0.3640  0.0026  1.8547  6.0056     14416  0.9500
+  0.00147    1.0007     2.05485 5.99055e-09 1.61071e-08 1.72116e-10   1.5093   0.3640  0.0049  1.7137  6.3346     14688  0.9500
+  0.00140   0.98895     1.99287 7.61489e-09 1.59925e-08 1.71388e-10   1.4409   0.2684  0.0048  1.5834  6.6387     14960  0.9500
+  0.00133   0.99893     2.01229 7.36604e-09 1.61243e-08 1.71388e-10   1.4409   0.3088  0.0029  1.3117  7.2727     15232  0.9500
+  0.00126   0.99399      1.9745 7.30629e-09 1.60133e-08 1.70661e-10   1.4409   0.3051  0.0030  1.1396  7.6742     15504  0.9500
+  0.00120    0.9916     1.96637 7.21462e-09 1.59765e-08 1.71388e-10   1.4409   0.2721  0.0041  1.0000  8.0000     15776  0.9500
+  0.00114   0.99753     1.96307 6.72402e-09 1.59254e-08 1.69206e-10   1.4409   0.3015  0.0018  1.0000  8.0000     16048  0.9500
+  0.00108    1.0007     1.95151 7.00708e-09 1.59407e-08 1.68479e-10   1.4409   0.2353  0.0011  1.0000  8.0000     16320  0.9500
+  0.00103   0.99735     1.93324 7.00034e-09 1.58278e-08 1.67752e-10   1.4409   0.2463  0.0019  1.0000  8.0000     16592  0.9500
+  0.00098    1.0015     1.93487 6.98464e-09 1.60125e-08 1.69934e-10   1.4409   0.2794  0.0024  1.0000  8.0000     16864  0.9500
+  0.00093   0.99996     1.94497 7.03744e-09 1.60125e-08 1.69206e-10   1.4409   0.3051  0.0015  1.0000  8.0000     17136  0.9500
+  0.00088    1.0018     1.93905 6.75506e-09 1.59268e-08 1.69206e-10   1.4409   0.2353  0.0028  1.0000  8.0000     17408  0.9500
+  0.00084   0.99591     1.92702 6.83278e-09 1.58066e-08 1.70661e-10   1.4409   0.1985  0.0037  1.0000  8.0000     17680  0.9500
+  0.00080    1.0031     1.91074 6.76069e-09  1.5972e-08 1.67752e-10   1.4409   0.2831  0.0020  1.0000  8.0000     17952  0.9500
+  0.00076   0.99898     1.92119 7.10249e-09 1.58808e-08 1.69206e-10   1.4409   0.2757  0.0027  1.0000  8.0000     18224  0.9500
+  0.00072   0.99771     1.91726 7.09312e-09 1.58799e-08 1.67752e-10   1.4409   0.2169  0.0018  1.0000  8.0000     18496  0.9500
+  0.00068   0.99876      1.9064 7.00856e-09 1.59874e-08 1.68479e-10   1.4409   0.2574  0.0046  1.0000  8.0000     18768  0.9500
+  0.00065   0.99734     1.87804 6.82587e-09 1.59287e-08 1.69934e-10   1.4409   0.1728  0.0010  1.0000  8.0000     19040  0.9500
+  0.00062    0.9966     1.87813 6.83311e-09  1.5883e-08 1.69206e-10   1.4409   0.1912  0.0026  1.0000  8.0000     19312  0.9500
+  0.00058    1.0005     1.86652 6.78307e-09 1.59085e-08 1.67752e-10   1.4409   0.1618  0.0007  1.0000  8.0000     19584  0.9500
+  0.00056    1.0013     1.85698 6.83995e-09 1.60271e-08 1.69206e-10   1.4409   0.1838  0.0010  1.0000  8.0000     19856  0.9500
+  0.00053   0.99958     1.85698 6.86396e-09 1.59961e-08 1.70661e-10   1.4409   0.1912  0.0005  1.0000  8.0000     20128  0.9500
+  0.00050    1.0011      1.8623 6.86961e-09 1.59716e-08 1.68479e-10   1.4409   0.2279  0.0008  1.0000  8.0000     20400  0.9500
+  0.00048    1.0005     1.86562 6.83528e-09  1.6041e-08 1.69206e-10   1.4409   0.2169  0.0015  1.0000  8.0000     20672  0.9500
+  0.00045         1     1.85698  7.1291e-09 1.59712e-08 1.69206e-10   1.4409   0.0993  0.0000  1.0000  8.0000     20944  0.8000
+  0.00036   0.99686     1.85698 6.94901e-09 1.59039e-08 1.69934e-10   1.4409   0.1691  0.0019  1.0000  8.0000     21216  0.9500
+  0.00034    1.0001     1.85698 6.78462e-09 1.58622e-08 1.69206e-10   1.4409   0.1397  0.0003  1.0000  8.0000     21488  0.8000
+  0.00028   0.99973     1.85698 6.79366e-09 1.58992e-08 1.68479e-10   1.4409   0.1618  0.0003  1.0000  8.0000     21760  0.9500
+  0.00026   0.99907     1.85698 6.79664e-09  1.5847e-08 1.69934e-10   1.4409   0.1507  0.0002  1.0000  8.0000     22032  0.9500
+  0.00025    1.0004     1.85698    6.78e-09 1.58784e-08 1.67752e-10   1.4409   0.1397  0.0003  1.0000  8.0000     22304  0.8000
+  0.00020   0.99993     1.85698 6.80633e-09 1.58283e-08 1.69206e-10   1.4409   0.1434  0.0000  1.0000  8.0000     22576  0.8000
+  0.00016   0.99993     1.85698 6.80398e-09 1.58566e-08 1.69206e-10   1.4409   0.1544  0.0000  1.0000  8.0000     22848  0.9500
+  0.00015   0.99908     1.85698 6.78798e-09 1.57263e-08 1.67752e-10   1.4409   0.1544  0.0001  1.0000  8.0000     23120  0.9500
+  0.00014         1     1.85698 6.77225e-09 1.57421e-08 1.67024e-10   1.4409   0.1324  0.0000  1.0000  8.0000     23392  0.8000
+  0.00011   0.99995     1.85698 6.77434e-09  1.5725e-08 1.67752e-10   1.4409   0.1324  0.0000  1.0000  8.0000     23664  0.8000
+  0.00009   0.99997     1.85698 6.77188e-09 1.56917e-08 1.67024e-10   1.4409   0.1471  0.0000  1.0000  8.0000     23936  0.8000
+  0.00000         1     1.85698 6.77226e-09 1.57003e-08 1.67024e-10            0.1029  0.0000  1.0000  8.0000     24208
+
+BB estimate of min-dist (placement) wirelength: 186
+bb_cost recomputed from scratch: 1.85698
+timing_cost recomputed from scratch: 6.77226e-09
+delay_cost recomputed from scratch: 1.57003e-08
+
+Completed placement consistency check successfully.
+
+Swaps called: 24275
+
+Placement estimated critical path delay: 1.44094 ns
+Placement cost: 1, bb_cost: 1.85698, td_cost: 6.77226e-09, delay_cost: 1.57003e-08
+Placement total # of swap attempts: 24275
+	Swap reject rate: 0
+	Swap accept rate: 0
+	Swap abort rate: 0
+Placement took 0.13 seconds.
+Using low: -1, high: -1, current: 182
+Build rr_graph took 0.08 seconds.
+Confirming Router Algorithm: TIMING_DRIVEN.
+
+Routing iteration: 1
+Wire length after first iteration 232, total available wire length 4368, ratio 0.0531136
+Critical path: 1.57768 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 2
+Critical path: 1.57768 ns
+Routing iteration took 0.01 seconds.
+
+Routing iteration: 3
+Critical path: 1.57768 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 4
+Critical path: 1.57768 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 5
+Critical path: 1.57768 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 6
+Critical path: 1.57768 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 7
+Critical path: 1.57768 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 8
+Critical path: 1.57768 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 9
+Critical path: 1.57768 ns
+Routing iteration took 0.01 seconds.
+
+Routing iteration: 10
+Critical path: 1.57768 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 11
+Successfully routed after 11 routing iterations.
+Completed net delay value cross check successfully.
+Using low: -1, high: 182, current: 92
+Build rr_graph took 0.02 seconds.
+Confirming Router Algorithm: TIMING_DRIVEN.
+
+Routing iteration: 1
+Wire length after first iteration 259, total available wire length 2208, ratio 0.117301
+Critical path: 1.57768 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 2
+Critical path: 1.57768 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 3
+Critical path: 1.57768 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 4
+Critical path: 1.57768 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 5
+Critical path: 1.57768 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 6
+Critical path: 1.57768 ns
+Routing iteration took 0.01 seconds.
+
+Routing iteration: 7
+Critical path: 1.57768 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 8
+Critical path: 1.57768 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 9
+Critical path: 1.57768 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 10
+Critical path: 1.57768 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 11
+Successfully routed after 11 routing iterations.
+Completed net delay value cross check successfully.
+Using low: -1, high: 92, current: 46
+Build rr_graph took 0.01 seconds.
+Confirming Router Algorithm: TIMING_DRIVEN.
+
+Routing iteration: 1
+Wire length after first iteration 299, total available wire length 1104, ratio 0.270833
+Critical path: 1.64605 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 2
+Critical path: 1.64605 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 3
+Critical path: 1.64605 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 4
+Critical path: 1.64605 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 5
+Critical path: 1.64605 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 6
+Critical path: 1.64605 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 7
+Critical path: 1.64605 ns
+Routing iteration took 0.01 seconds.
+
+Routing iteration: 8
+Critical path: 1.64605 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 9
+Critical path: 1.64605 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 10
+Critical path: 1.64605 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 11
+Critical path: 1.64605 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 12
+Critical path: 1.64605 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 13
+Critical path: 1.64605 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 14
+Successfully routed after 14 routing iterations.
+Completed net delay value cross check successfully.
+Using low: -1, high: 46, current: 24
+Build rr_graph took 0.01 seconds.
+Confirming Router Algorithm: TIMING_DRIVEN.
+
+Routing iteration: 1
+Wire length after first iteration 327, total available wire length 576, ratio 0.567708
+Critical path: 1.78279 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 2
+Critical path: 1.78279 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 3
+Critical path: 1.78279 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 4
+Critical path: 1.78279 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 5
+Critical path: 1.78279 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 6
+Critical path: 1.78279 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 7
+Critical path: 1.78279 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 8
+Critical path: 1.78279 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 9
+Critical path: 1.78279 ns
+Routing iteration took 0.01 seconds.
+
+Routing iteration: 10
+Critical path: 1.7931 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 11
+Critical path: 1.99821 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 12
+Critical path: 1.9879 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 13
+Critical path: 1.99821 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 14
+Critical path: 1.85116 ns
+Routing iteration took 0.01 seconds.
+
+Routing iteration: 15
+Critical path: 2.20332 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 16
+Critical path: 2.12464 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 17
+Critical path: 2.05627 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 18
+Critical path: 2.05558 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 19
+Critical path: 2.46649 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 20
+Critical path: 2.06658 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 21
+Critical path: 1.9879 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 22
+Critical path: 1.99821 ns
+Routing iteration took 0.01 seconds.
+
+Routing iteration: 23
+Critical path: 2.12464 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 24
+Critical path: 2.19301 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 25
+Critical path: 1.9879 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 26
+Critical path: 1.99821 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 27
+Critical path: 2.05558 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 28
+Critical path: 2.26138 ns
+Routing iteration took 0.01 seconds.
+
+Routing iteration: 29
+Critical path: 2.06658 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 30
+Critical path: 2.20332 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 31
+Critical path: 2.05627 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 32
+Critical path: 2.06658 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 33
+Critical path: 2.12395 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 34
+Critical path: 2.19232 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 35
+Critical path: 2.12395 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 36
+Critical path: 2.12395 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 37
+Critical path: 2.13495 ns
+Routing iteration took 0.01 seconds.
+
+Routing iteration: 38
+Critical path: 2.12464 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 39
+Critical path: 2.06658 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 40
+Critical path: 2.06658 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 41
+Critical path: 2.13495 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 42
+Critical path: 2.13495 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 43
+Critical path: 2.13495 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 44
+Critical path: 2.06658 ns
+Routing iteration took 0.01 seconds.
+
+Routing iteration: 45
+Critical path: 2.06658 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 46
+Critical path: 1.9879 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 47
+Critical path: 2.05627 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 48
+Critical path: 2.19301 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 49
+Critical path: 1.9879 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 50
+Critical path: 2.19301 ns
+Routing iteration took 0 seconds.
+Routing failed.
+Using low: 24, high: 46, current: 36
+Build rr_graph took 0.01 seconds.
+Confirming Router Algorithm: TIMING_DRIVEN.
+
+Routing iteration: 1
+Wire length after first iteration 286, total available wire length 864, ratio 0.331019
+Critical path: 1.71442 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 2
+Critical path: 1.71442 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 3
+Critical path: 1.71442 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 4
+Critical path: 1.71442 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 5
+Critical path: 1.71442 ns
+Routing iteration took 0.01 seconds.
+
+Routing iteration: 6
+Critical path: 1.71442 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 7
+Critical path: 1.71442 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 8
+Critical path: 1.71442 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 9
+Critical path: 1.71442 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 10
+Critical path: 1.71442 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 11
+Critical path: 1.71442 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 12
+Critical path: 1.78279 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 13
+Critical path: 1.78279 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 14
+Critical path: 1.78279 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 15
+Critical path: 1.78279 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 16
+Critical path: 1.78279 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 17
+Critical path: 1.78279 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 18
+Critical path: 1.85116 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 19
+Critical path: 1.78279 ns
+Routing iteration took 0.01 seconds.
+
+Routing iteration: 20
+Critical path: 1.85116 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 21
+Critical path: 1.7931 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 22
+Critical path: 1.78279 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 23
+Critical path: 1.78279 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 24
+Critical path: 1.92984 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 25
+Critical path: 1.91953 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 26
+Critical path: 1.86147 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 27
+Successfully routed after 27 routing iterations.
+Completed net delay value cross check successfully.
+Using low: 24, high: 36, current: 30
+Build rr_graph took 0.01 seconds.
+Confirming Router Algorithm: TIMING_DRIVEN.
+
+Routing iteration: 1
+Wire length after first iteration 314, total available wire length 720, ratio 0.436111
+Critical path: 1.85116 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 2
+Critical path: 1.85116 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 3
+Critical path: 1.85116 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 4
+Critical path: 1.85116 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 5
+Critical path: 1.85116 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 6
+Critical path: 1.85116 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 7
+Critical path: 1.85116 ns
+Routing iteration took 0.01 seconds.
+
+Routing iteration: 8
+Critical path: 1.85116 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 9
+Critical path: 1.85116 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 10
+Critical path: 1.85116 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 11
+Critical path: 1.85116 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 12
+Critical path: 1.85116 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 13
+Critical path: 1.85116 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 14
+Critical path: 1.85116 ns
+Routing iteration took 0.01 seconds.
+
+Routing iteration: 15
+Critical path: 1.85116 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 16
+Critical path: 1.85116 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 17
+Critical path: 1.85116 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 18
+Critical path: 2.05627 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 19
+Critical path: 1.85116 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 20
+Critical path: 1.91953 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 21
+Critical path: 1.91953 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 22
+Critical path: 1.91953 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 23
+Critical path: 1.91953 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 24
+Critical path: 1.91953 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 25
+Critical path: 1.91953 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 26
+Critical path: 1.91953 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 27
+Critical path: 1.91953 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 28
+Critical path: 1.91953 ns
+Routing iteration took 0.01 seconds.
+
+Routing iteration: 29
+Critical path: 1.91953 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 30
+Critical path: 1.91953 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 31
+Critical path: 1.91953 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 32
+Critical path: 1.92984 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 33
+Critical path: 1.91953 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 34
+Critical path: 1.91953 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 35
+Critical path: 1.91953 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 36
+Critical path: 1.91953 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 37
+Critical path: 1.91953 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 38
+Critical path: 2.19301 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 39
+Critical path: 1.85116 ns
+Routing iteration took 0.01 seconds.
+
+Routing iteration: 40
+Critical path: 1.85116 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 41
+Critical path: 1.85116 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 42
+Successfully routed after 42 routing iterations.
+Completed net delay value cross check successfully.
+Using low: 24, high: 30, current: 28
+Build rr_graph took 0 seconds.
+Confirming Router Algorithm: TIMING_DRIVEN.
+
+Routing iteration: 1
+Wire length after first iteration 293, total available wire length 672, ratio 0.436012
+Critical path: 1.64605 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 2
+Critical path: 1.64605 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 3
+Critical path: 1.64605 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 4
+Critical path: 1.64605 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 5
+Critical path: 1.64605 ns
+Routing iteration took 0.01 seconds.
+
+Routing iteration: 6
+Critical path: 1.64605 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 7
+Critical path: 1.64605 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 8
+Critical path: 1.64605 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 9
+Critical path: 1.64605 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 10
+Critical path: 1.64605 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 11
+Critical path: 1.7931 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 12
+Critical path: 1.7931 ns
+Routing iteration took 0.01 seconds.
+
+Routing iteration: 13
+Critical path: 1.72473 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 14
+Critical path: 1.78279 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 15
+Critical path: 1.99821 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 16
+Critical path: 1.78279 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 17
+Critical path: 2.05627 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 18
+Critical path: 1.9879 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 19
+Critical path: 1.91953 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 20
+Critical path: 2.13495 ns
+Routing iteration took 0.01 seconds.
+
+Routing iteration: 21
+Critical path: 1.99821 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 22
+Critical path: 2.05627 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 23
+Critical path: 2.05627 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 24
+Critical path: 2.53486 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 25
+Critical path: 1.92984 ns
+Routing iteration took 0.01 seconds.
+
+Routing iteration: 26
+Critical path: 2.20332 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 27
+Critical path: 2.27169 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 28
+Critical path: 2.20332 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 29
+Critical path: 2.34006 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 30
+Critical path: 2.20332 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 31
+Critical path: 2.27169 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 32
+Critical path: 2.40843 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 33
+Critical path: 2.34006 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 34
+Critical path: 2.34006 ns
+Routing iteration took 0.01 seconds.
+
+Routing iteration: 35
+Critical path: 2.34006 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 36
+Critical path: 2.34006 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 37
+Critical path: 2.27169 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 38
+Critical path: 2.40843 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 39
+Critical path: 2.13495 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 40
+Critical path: 2.13495 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 41
+Critical path: 1.99821 ns
+Routing iteration took 0.01 seconds.
+
+Routing iteration: 42
+Critical path: 2.12464 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 43
+Critical path: 2.12464 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 44
+Critical path: 2.12464 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 45
+Critical path: 2.12464 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 46
+Critical path: 2.12464 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 47
+Critical path: 2.27169 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 48
+Critical path: 2.27169 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 49
+Critical path: 2.27169 ns
+Routing iteration took 0 seconds.
+
+Routing iteration: 50
+Critical path: 2.27169 ns
+Routing iteration took 0 seconds.
+Routing failed.
+
+Checking to ensure routing is legal...
+Completed routing consistency check successfully.
+
+Serial number (magic cookie) for the routing is: -6354654
+Best routing used a channel width factor of 30.
+
+Average number of bends per net: 1.83077  Maximum # of bends: 8
+
+Number of routed nets (nonglobal): 65
+Wirelength results (in units of 1 clb segments)...
+	Total wirelength: 383, average net length: 5.89231
+	Maximum net length: 17
+
+Wirelength results in terms of physical segments...
+	Total wiring segments used: 190, average wire segments per net: 2.92308
+	Maximum segments used by a net: 9
+	Total local nets with reserved CLB opins: 0
+
+X - Directed channels: j	max occ	av_occ		capacity
+0	15	13.0000  	30
+1	14	12.3333  	30
+2	21	19.6667  	30
+3	20	19.0000  	30
+
+Y - Directed channels: i	max occ	av_occ		capacity
+0	17	15.3333  	30
+1	13	11.0000  	30
+2	13	11.3333  	30
+3	27	26.0000  	30
+
+Total tracks in x-direction: 120, in y-direction: 120
+
+Logic area (in minimum width transistor areas, excludes I/Os and empty grid tiles)...
+	Total logic block area (Warning, need to add pitch of routing to blocks with height > 3): 133321
+	Total used logic block area: 74067
+
+Routing area (in minimum width transistor areas)...
+	Total routing area: 43143.6, per logic tile: 4793.73
+
+Segment usage by type (index):
+Segment type       Fractional utilization
+------------       ----------------------
+       0                  0.528
+
+Segment usage by length:
+Segment length       Fractional utilization
+--------------       ----------------------
+        4                   0.528
+
+Nets on critical path: 3 normal, 0 global.
+Total logic delay: 7.5525e-10 (s), total net delay: 1.10622e-09 (s)
+Final critical path: 1.86147 ns
+f_max: 537.21 MHz
+
+Least slack in design: -1.86147 ns
+
