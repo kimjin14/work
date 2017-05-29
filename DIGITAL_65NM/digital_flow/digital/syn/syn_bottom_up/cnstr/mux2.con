@@ -1,0 +1,2 @@
+set_max_delay -from in* -to out 0.01
+set_false_path -from config*

@@ -1,0 +1,4 @@
+create_clock -name clk -period 0.5 clk
+set_false_path -from config*
+set_disable_timing fle_*/mux_bypass_*/in[0]
+set_max_delay -from I* -to fle*/ff_*/D 0.1
