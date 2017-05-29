@@ -1,0 +1,17 @@
+set_max_delay -from outpad[0] -to io_ext[0] 0.01
+set_max_delay -from outpad[1] -to io_ext[1] 0.01
+set_max_delay -from outpad[2] -to io_ext[2] 0.01
+set_max_delay -from outpad[3] -to io_ext[3] 0.01
+set_max_delay -from outpad[4] -to io_ext[4] 0.01
+set_max_delay -from outpad[5] -to io_ext[5] 0.01
+set_max_delay -from outpad[6] -to io_ext[6] 0.01
+set_max_delay -from outpad[7] -to io_ext[7] 0.01
+
+set_max_delay -from io_ext[0] -to inpad[0] 0.01
+set_max_delay -from io_ext[1] -to inpad[1] 0.01
+set_max_delay -from io_ext[2] -to inpad[2] 0.01
+set_max_delay -from io_ext[3] -to inpad[3] 0.01
+set_max_delay -from io_ext[4] -to inpad[4] 0.01
+set_max_delay -from io_ext[5] -to inpad[5] 0.01
+set_max_delay -from io_ext[6] -to inpad[6] 0.01
+set_max_delay -from io_ext[7] -to inpad[7] 0.01

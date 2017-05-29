@@ -1,0 +1,17 @@
+set_operating_conditions WCCOM
+set_wire_load_model -name "TSMC8K_Lowk_Conservative"
+
+create_clock -name fpga_clk -period 1 fpga_clk
+create_clock -name config_clk -period 500 config_clk
+
+set_load 1.5 [all_outputs]
+set_drive 1.5 [all_inputs]
+
+set_drive 0 fpga_clk
+set_drive 0 config_clk
+
+set_false_path -from config*
+set_disable_timing clb*/fle_*/mux_bypass_*/in[0]
+set_disable_timing mux*/in*
+set_max_delay -from clb*/I* -to clb*/O* 0.5
+set_max_delay -from mux*/in* -to mux*/out* 0.01
